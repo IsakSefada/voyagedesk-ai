@@ -35,3 +35,14 @@
 
 /* v0.3.2 password recovery */
 .forgot-link{justify-self:start;border:0;background:transparent;color:#465fff;padding:0;margin-top:-3px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}.forgot-link:hover{text-decoration:underline}.auth-back{width:100%}.auth-tabs.hidden{display:none!important}
+
+
+/* v0.4 consumer Plan My Trip */
+.consumer-trip-form{max-width:980px;margin:0 auto;padding:0;overflow:hidden}
+.planner-intro{padding:34px 34px 26px;background:linear-gradient(135deg,#f7f9ff,#fff)}
+.planner-intro h2{font-size:34px;margin:10px 0 8px}.planner-intro p{color:var(--muted);font-size:16px;max-width:680px;line-height:1.6}
+.planner-step{padding:28px 34px;border-top:1px solid var(--line)}
+.step-title{display:flex;gap:13px;align-items:center;margin-bottom:22px}.step-title>span{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:#fff;font-weight:900;flex:0 0 auto}.step-title strong,.step-title small{display:block}.step-title strong{font-size:18px}.step-title small{color:var(--muted);margin-top:3px}
+.planner-step textarea{min-height:92px}.planner-advanced{margin-top:18px;border:1px solid var(--line);border-radius:12px;padding:0 16px;background:#fafbfe}.planner-advanced summary{cursor:pointer;font-weight:800;padding:14px 0}.planner-advanced .grid{padding:4px 0 16px}
+.planner-submit{padding:26px 34px 34px;border-top:1px solid var(--line);display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#fbfcff}.planner-submit small{width:100%;color:var(--muted)}.planner-cta{font-size:16px;padding:13px 20px}
+@media(max-width:700px){.planner-intro,.planner-step,.planner-submit{padding-left:20px;padding-right:20px}.planner-intro h2{font-size:28px}}
