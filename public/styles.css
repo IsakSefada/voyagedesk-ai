@@ -59,3 +59,19 @@
 .how-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.how-grid>div{background:#fff;border:1px solid var(--line);border-radius:15px;padding:18px;display:grid;grid-template-columns:38px 1fr;column-gap:11px;box-shadow:0 6px 18px rgba(20,44,84,.06)}.how-grid b{grid-row:1/3;width:36px;height:36px;border-radius:10px;background:#edf0ff;color:#465aff;display:grid;place-items:center}.how-grid strong{font-size:13px}.how-grid small{color:var(--muted);line-height:1.4;margin-top:4px}.consumer-stats{margin-top:28px}.recent-panel{margin-top:14px}
 @media(max-width:1100px){.consumer-hero{grid-template-columns:1fr}.consumer-hero-art{display:none}.quick-grid{grid-template-columns:1fr 1fr}.destination-grid{grid-template-columns:repeat(3,1fr)}.how-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:700px){.consumer-hero-copy{padding:34px 24px}.consumer-hero h2{font-size:38px}.quick-planner{margin:-20px 8px 24px}.quick-tabs{overflow-x:auto}.quick-tabs>*{white-space:nowrap}.quick-grid{grid-template-columns:1fr}.destination-grid{grid-template-columns:1fr 1fr}.how-grid{grid-template-columns:1fr}}
+
+
+/* v0.4 destination photography */
+.consumer-hero-art{
+  background-image:linear-gradient(90deg,rgba(6,31,69,.05),rgba(6,31,69,.02)),url("https://images.unsplash.com/photo-1598972981358-8facd0e9e256?auto=format&fit=crop&w=1600&q=82");
+  background-size:cover;background-position:center;
+}
+.consumer-hero-art .sun,.consumer-hero-art .coast{display:none}
+.hero-art-label{background:rgba(5,24,55,.72);backdrop-filter:blur(5px)}
+.destination-card{background-size:cover!important;background-position:center!important}
+.paris{background-image:url("https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=700&q=82")!important}
+.santorini{background-image:url("https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=700&q=82")!important}
+.rome{background-image:url("https://images.unsplash.com/photo-1524401204522-ca186dd1f199?auto=format&fit=crop&w=700&q=82")!important}
+.istanbul{background-image:url("https://images.unsplash.com/photo-1761249519600-b92688f3d094?auto=format&fit=crop&w=700&q=82")!important}
+.bali{background-image:url("https://images.unsplash.com/photo-1768199047060-8103b5dbfa83?auto=format&fit=crop&w=700&q=82")!important}
+.newyork{background-image:url("https://images.unsplash.com/photo-1777106800033-60faaaf4f2a3?auto=format&fit=crop&w=700&q=82")!important}
