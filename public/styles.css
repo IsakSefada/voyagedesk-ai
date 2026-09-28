@@ -69,12 +69,12 @@
 .consumer-hero-art .sun,.consumer-hero-art .coast{display:none}
 .hero-art-label{background:rgba(5,24,55,.72);backdrop-filter:blur(5px)}
 .destination-card{background-size:cover!important;background-position:center!important}
-.paris{background-image:url("https://images.unsplash.com/FJYS6vuf39k?auto=format&fit=crop&w=700&q=88")!important}
-.santorini{background-image:url("https://images.unsplash.com/J6VOPjsDmRI?auto=format&fit=crop&w=700&q=88")!important}
-.rome{background-image:url("https://images.unsplash.com/Ggrzw0mB1u8?auto=format&fit=crop&w=700&q=88")!important}
-.istanbul{background-image:url("https://images.unsplash.com/R3o9V5eus0Y?auto=format&fit=crop&w=700&q=88")!important}
-.bali{background-image:url("https://images.unsplash.com/exFdOWkYBQw?auto=format&fit=crop&w=700&q=88")!important}
-.newyork{background-image:url("https://images.unsplash.com/9udt6H5leYo?auto=format&fit=crop&w=700&q=88")!important}
+.paris{background-image:url("./Paris.jpg")!important}
+.santorini{background-image:url("./Santorini.jpg")!important}
+.rome{background-image:url("./Rome.jpeg")!important}
+.istanbul{background-image:url("./Istanbul.jpeg")!important}
+.bali{background-image:url("./Bali.jpeg")!important}
+.newyork{background-image:url("./Newyork.jpeg")!important}
 
 
 /* v0.4 Istanbul hero + spacing refinement */
