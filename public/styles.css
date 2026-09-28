@@ -91,3 +91,15 @@
   background-size:cover;
   background-position:center center;
 }
+
+
+/* v0.4 brighter destination cards */
+.destination-card::after{
+  background:linear-gradient(to bottom,transparent 58%,rgba(5,18,42,.10) 72%,rgba(5,18,42,.68) 100%)!important;
+}
+.destination-card{
+  filter:saturate(1.12) brightness(1.08);
+}
+.destination-card:hover{
+  filter:saturate(1.16) brightness(1.11);
+}
