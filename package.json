@@ -1,0 +1,10 @@
+{
+  "name": "voyagedesk-ai",
+  "version": "0.3.3",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "description": "VoyageDesk AI travel advisor workspace \u2014 agent accounts, cloud-ready trips, clients, AI proposals, photos and live inventory adapters."
+}
