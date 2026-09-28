@@ -145,3 +145,16 @@
 .how-grid>div{box-shadow:0 8px 22px rgba(20,44,84,.07)}
 @media(max-width:1100px){.destination-card{height:215px}}
 @media(max-width:700px){.destination-card{height:190px}}
+
+
+/* v0.4 sidebar explore photography */
+.sidebar-explore{
+  position:relative;
+  overflow:hidden;
+  background-image:linear-gradient(180deg,rgba(6,25,55,.05) 25%,rgba(6,25,55,.20) 55%,rgba(6,25,55,.76) 100%),url("./sidebar-explore.jpg");
+  background-size:cover;
+  background-position:center;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 10px 28px rgba(0,0,0,.16);
+}
+.sidebar-explore strong,.sidebar-explore small{position:relative;z-index:1;text-shadow:0 1px 4px rgba(0,0,0,.38)}
+.sidebar-explore small{color:#fff}
