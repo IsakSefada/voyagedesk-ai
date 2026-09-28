@@ -103,3 +103,10 @@
 .destination-card:hover{
   filter:saturate(1.16) brightness(1.11);
 }
+
+
+/* v0.4 destination overlay correction — override legacy :before */
+.destination-card:before{
+  background:linear-gradient(180deg,transparent 62%,rgba(3,14,35,.12) 74%,rgba(3,14,35,.62) 100%)!important;
+}
+.destination-card::after{display:none!important}
