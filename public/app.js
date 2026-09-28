@@ -100,7 +100,7 @@ $('#resetForm')?.addEventListener('submit',async e=>{
 });
 $('#logoutBtn')?.addEventListener('click',async()=>{try{await fetch('/api/auth/logout',{method:'POST'});}catch{}setSession(null);currentUser=null;$('#signedInEmail').textContent='';$('#logoutBtn').classList.add('hidden');$('#authGate').classList.remove('hidden');setAuthMode('login');});
 
-function setView(name){$('.view').forEach(v=>v.classList.toggle('active',v.id===name));$('.nav').forEach(v=>v.classList.toggle('active',v.dataset.view===name));$('#pageTitle').textContent={new:'Plan My Trip',trips:'My Trips',clients:'Clients',settings:'Branding'}[name]||'Welcome to VoyageDesk AI';window.scrollTo({top:0,behavior:'smooth'});}$$('[data-view]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));$('#newTripTop').onclick=$('#heroNew').onclick=()=>setView('new');
+function setView(name){$('.view').forEach(v=>v.classList.toggle('active',v.id===name));$('.nav').forEach(v=>v.classList.toggle('active',v.dataset.view===name));$('#pageTitle').textContent={new:'Plan My Trip',trips:'My Trips',clients:'Clients',settings:'Branding'}[name]||'Welcome to VoyageDesk AI';window.scrollTo({top:0,behavior:'smooth'});}$('[data-view]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));$('#newTripTop')?.addEventListener('click',()=>setView('new'));$('#heroNew')?.addEventListener('click',()=>setView('new'));
 
 
 // Smart city and airport autocomplete. This local catalogue keeps the MVP fast and predictable;
@@ -267,10 +267,10 @@ function applyBrand(){
 function loadBrandForm(){const b=getBrand();$('#brandName').value=b.name||'';$('#advisorName').value=b.advisor||'';$('#brandEmail').value=b.email||'';$('#brandPhone').value=b.phone||'';$('#brandWebsite').value=b.website||'';$('#brandAddress').value=b.address||'';$('#brandTagline').value=b.tagline||'';$('#defaultLanguage').value=b.defaultLanguage||'English';$('#defaultCurrency').value=b.defaultCurrency||'USD';applyBrand();}
 async function saveBrandForm(){const old=getBrand();const profile={...old,name:$('#brandName').value.trim(),advisor:$('#advisorName').value.trim(),email:$('#brandEmail').value.trim(),phone:$('#brandPhone').value.trim(),website:$('#brandWebsite').value.trim(),address:$('#brandAddress').value.trim(),tagline:$('#brandTagline').value.trim(),defaultLanguage:$('#defaultLanguage').value||'English',defaultCurrency:$('#defaultCurrency').value||'USD'};setBrand(profile);if(cloudEnabled&&currentUser){const r=await fetch('/api/agency-profile',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(profile)});if(!r.ok){const d=await r.json().catch(()=>({}));alert(d.error||'Branding saved locally, but cloud save failed.');}}applyTripDefaults();$('#saveBrand').textContent='✓ Saved';setTimeout(()=>$('#saveBrand').textContent='Save Branding',1400);}
 $('#saveBrand').onclick=saveBrandForm;
-$('#sidebarBrandEdit').onclick=$('#sidebarContactEdit').onclick=()=>setView('settings');
-$('#changeLogo').onclick=$('#settingsChooseLogo').onclick=()=>$('#logoFile').click();
+$('#sidebarBrandEdit')?.addEventListener('click',()=>setView('settings'));$('#sidebarContactEdit')?.addEventListener('click',()=>setView('settings'));
+$('#changeLogo')?.addEventListener('click',()=>$('#logoFile')?.click());$('#settingsChooseLogo')?.addEventListener('click',()=>$('#logoFile')?.click());
 $('#logoFile').addEventListener('change',e=>{const file=e.target.files?.[0];if(!file)return;if(file.size>2*1024*1024){alert('Please choose a logo smaller than 2 MB.');e.target.value='';return;}const reader=new FileReader();reader.onload=()=>{const b=getBrand();setBrand({...b,logo:reader.result});};reader.readAsDataURL(file);e.target.value='';});
-function removeLogo(){const b=getBrand();delete b.logo;setBrand(b);}$('#removeLogo').onclick=$('#settingsRemoveLogo').onclick=removeLogo;
+function removeLogo(){const b=getBrand();delete b.logo;setBrand(b);}$('#removeLogo')?.addEventListener('click',removeLogo);$('#settingsRemoveLogo')?.addEventListener('click',removeLogo);
 
 async function loadCloudBrand(){
   if(!cloudEnabled||!currentUser)return;
