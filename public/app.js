@@ -261,7 +261,7 @@ function applyBrand(){
   if($('#sidebarAgencyName'))$('#sidebarAgencyName').textContent=name;if($('#sidebarAdvisor'))$('#sidebarAdvisor').textContent=advisor;if($('#sidebarTagline'))$('#sidebarTagline').textContent=tagline;
   if($('#sidebarPhone'))$('#sidebarPhone').textContent=b.phone?`☎ ${b.phone}`:'☎ Add phone';if($('#sidebarEmail'))$('#sidebarEmail').textContent=b.email?`✉ ${b.email}`:'✉ Add email';if($('#sidebarWebsite'))$('#sidebarWebsite').textContent=b.website?`◎ ${b.website}`:'◎ Add website';if($('#sidebarAddress'))$('#sidebarAddress').textContent=b.address?`⌖ ${b.address}`:'⌖ Add address';
   const logo=b.logo||'';
-  for(const id of ['brandLogoPrint','sidebarLogo','settingsLogoPreview']){const el=$('#'+id);if(logo){el.src=logo;el.classList.remove('hidden');}else{el.removeAttribute('src');el.classList.add('hidden');}}
+  for(const id of ['brandLogoPrint','sidebarLogo','settingsLogoPreview']){const el=$('#'+id);if(!el)continue;if(logo){el.src=logo;el.classList.remove('hidden');}else{el.removeAttribute('src');el.classList.add('hidden');}}
   $('#sidebarLogoPlaceholder')?.classList.toggle('hidden',!!logo);$('#settingsLogoPlaceholder')?.classList.toggle('hidden',!!logo);$('#removeLogo')?.classList.toggle('hidden',!logo);
 }
 function loadBrandForm(){const b=getBrand();$('#brandName').value=b.name||'';$('#advisorName').value=b.advisor||'';$('#brandEmail').value=b.email||'';$('#brandPhone').value=b.phone||'';$('#brandWebsite').value=b.website||'';$('#brandAddress').value=b.address||'';$('#brandTagline').value=b.tagline||'';$('#defaultLanguage').value=b.defaultLanguage||'English';$('#defaultCurrency').value=b.defaultCurrency||'USD';applyBrand();}
