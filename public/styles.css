@@ -75,3 +75,11 @@
 .istanbul{background-image:url("https://images.unsplash.com/photo-1761249519600-b92688f3d094?auto=format&fit=crop&w=700&q=82")!important}
 .bali{background-image:url("https://images.unsplash.com/photo-1768199047060-8103b5dbfa83?auto=format&fit=crop&w=700&q=82")!important}
 .newyork{background-image:url("https://images.unsplash.com/photo-1777106800033-60faaaf4f2a3?auto=format&fit=crop&w=700&q=82")!important}
+
+
+/* v0.4 Istanbul hero + spacing refinement */
+.consumer-hero-art{
+  background-image:linear-gradient(90deg,rgba(6,31,69,.03),rgba(6,31,69,.02)),url("https://images.unsplash.com/photo-1761249519600-b92688f3d094?auto=format&fit=crop&w=1800&q=88");
+  background-position:center 48%;
+}
+.quick-planner{margin-top:18px}
