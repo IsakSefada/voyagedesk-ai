@@ -354,3 +354,18 @@ async function status(){try{const r=await fetch('/api/status'),s=await r.json();
 async function initializeSignedInWorkspace(){const ok=await verifyCloudSession();if(!ok)return;await loadCloudBrand();loadBrandForm();applyTripDefaults();await Promise.all([loadTrips(),loadClients()]);}
 async function initApp(){await status();if(cloudEnabled){const ok=await verifyCloudSession();if(!ok)return;}else{$('#authGate').classList.add('hidden');$('#logoutBtn').classList.add('hidden');}await initializeSignedInWorkspace();}
 initApp();
+
+
+// v0.4 consumer home shortcuts
+function openPlannerWithQuickValues(destination='',origin='',departure='',returnDate=''){
+  setView('new');
+  const form=$('#tripForm');
+  if(destination)form.elements.destinations.value=destination;
+  if(origin)form.elements.departureCity.value=origin;
+  if(departure)form.elements.departureDate.value=departure;
+  if(returnDate)form.elements.returnDate.value=returnDate;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+$('#quickCreate')?.addEventListener('click',()=>openPlannerWithQuickValues($('#quickDestination').value.trim(),$('#quickOrigin').value.trim(),$('#quickDepart').value,$('#quickReturn').value));
+$$('[data-destination]').forEach(card=>card.addEventListener('click',()=>openPlannerWithQuickValues(card.dataset.destination)));
+$$('.nav-coming').forEach(btn=>btn.addEventListener('click',()=>alert('This feature is planned for a future VoyageDesk consumer update.')));
