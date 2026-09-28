@@ -360,8 +360,16 @@ initApp();
 function openPlannerWithQuickValues(destination='',origin='',departure='',returnDate=''){
   const form=$('#tripForm');
   if(!form)return;
-  if(destination)form.elements.destinations.value=destination;
-  if(origin)form.elements.departureCity.value=origin;
+  if(destination){
+    form.elements.destinations.value=destination;
+    const match=cityMatches(destination)[0];
+    form.elements.destinationCode.value=match?.cityCode||match?.airports?.[0]?.[0]||'';
+  }
+  if(origin){
+    form.elements.departureCity.value=origin;
+    const match=cityMatches(origin)[0];
+    form.elements.originCode.value=match?.airports?.[0]?.[0]||match?.cityCode||'';
+  }
   if(departure)form.elements.departureDate.value=departure;
   if(returnDate)form.elements.returnDate.value=returnDate;
   setView('new');
