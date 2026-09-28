@@ -42,21 +42,30 @@
   </div>
 </div>
 
-<div class="app-shell"><aside class="sidebar">
-  <div class="sidebar-brand-card">
-    <div class="sidebar-card-head"><span>VOYAGEDESK AI</span><button class="sidebar-edit" id="sidebarBrandEdit" type="button">Edit</button></div>
-    <div class="sidebar-logo-box" id="sidebarLogoBox"><div class="sidebar-logo-placeholder" id="sidebarLogoPlaceholder">V</div><img id="sidebarLogo" class="sidebar-logo hidden" alt="Agency logo"></div>
-    <strong id="sidebarAgencyName">VoyageDesk AI</strong><small id="sidebarTagline">Plan smarter. Travel better.</small>
-    <div class="sidebar-brand-actions"><button id="changeLogo" class="mini-primary" type="button">Change Logo</button><button id="removeLogo" class="mini-secondary hidden" type="button">Remove</button></div>
-    <input id="logoFile" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>
-  </div>
-  <div class="advisor-mini"><div class="avatar">V</div><div><strong id="sidebarAdvisor">My Travel Planner</strong><small>AI-powered planning</small><span class="online">● Ready</span></div></div>
-  <nav><button class="nav active" data-view="dashboard">⌂ <span>Home</span></button><button class="nav" data-view="new">＋ <span>Plan My Trip</span></button><button class="nav" data-view="trips">✦ <span>My Trips</span></button><button class="nav hidden" data-view="clients">♙ <span>Clients</span></button><button class="nav hidden" data-view="settings">⚙ <span>Branding</span></button></nav>
-  <div class="sidebar-contact-card hidden"><div class="sidebar-card-head"><span>AGENCY CONTACT</span><button class="sidebar-edit" id="sidebarContactEdit" type="button">Edit</button></div><div id="sidebarPhone">☎ Add phone</div><div id="sidebarEmail">✉ Add email</div><div id="sidebarWebsite">◎ Add website</div><div id="sidebarAddress">⌖ Add address</div></div>
-  <div class="cloud-account"><small id="cloudModeLabel">Local prototype</small><strong id="signedInEmail"></strong><button id="logoutBtn" type="button" class="mini-secondary hidden">Sign Out</button></div><div class="side-note">VoyageDesk AI v0.4<br><span>Your AI-powered travel planner.</span></div>
+<div class="app-shell"><aside class="sidebar consumer-sidebar">
+  <div class="consumer-logo"><div class="consumer-logo-mark">✈</div><div><strong>VoyageDesk <em>AI</em></strong><small>Your AI Travel Planner</small></div></div>
+  <nav><button class="nav active" data-view="dashboard">⌂ <span>Home</span></button><button class="nav" data-view="new">✈ <span>Plan My Trip</span></button><button class="nav" data-view="trips">▣ <span>My Trips</span></button><button class="nav nav-coming" type="button">♡ <span>Saved Places</span></button><button class="nav nav-coming" type="button">◉ <span>Travel Inspiration</span></button><button class="nav hidden" data-view="clients">♙ <span>Clients</span></button><button class="nav hidden" data-view="settings">⚙ <span>Branding</span></button></nav>
+  <div class="sidebar-explore"><strong>Explore.<br>Discover.<br>Plan smarter.</strong><small>Travel with AI</small></div>
+  <div class="cloud-account"><small id="cloudModeLabel">Local prototype</small><strong id="signedInEmail"></strong><button id="logoutBtn" type="button" class="mini-secondary hidden">Sign Out</button></div>
+  <div class="side-note">VoyageDesk AI v0.4</div>
 </aside>
 <main><header><div><p class="eyebrow">YOUR AI TRAVEL PLANNER</p><h1 id="pageTitle">Home</h1></div><div class="header-actions"><span id="storageBadge" class="storage-badge">LOCAL</span><button id="newTripTop" class="primary">＋ Plan a New Trip</button></div></header>
-<section id="dashboard" class="view active"><div class="hero"><div><span class="badge">AI TRIP PLANNER</span><h2>Tell us where you want to go. We’ll help plan the journey.</h2><p>Build a personalized day-by-day itinerary around your dates, budget, interests, hotel preferences, and special needs — then explore flights, hotels, and booking options.</p><button class="primary" id="heroNew">Plan My Trip</button></div><div class="hero-card"><div class="spark">✦</div><strong>Travel planning, simplified</strong><p id="providerStatus">Checking connections…</p></div></div><div class="stats"><div class="stat"><span>Saved trips</span><strong id="tripCount">0</strong></div><div class="stat"><span>Trip plans</span><strong id="draftCount">0</strong></div><div class="stat"><span>Live inventory</span><strong id="liveStatus">—</strong></div></div><div class="panel"><div class="panel-head"><h3>Recent trips</h3><button class="text-btn" data-view="trips">View all</button></div><div id="recentTrips" class="trip-list empty">No trips yet.</div></div></section>
+<section id="dashboard" class="view active consumer-home">
+  <div class="consumer-hero">
+    <div class="consumer-hero-copy"><span class="hero-kicker">AI-POWERED TRAVEL PLANNING</span><h2>Your next adventure<br><em>starts here.</em></h2><p>Tell us where you want to go. We’ll create a personalized trip plan with places to stay, things to do, and booking options.</p><div class="hero-features"><span>✦ AI itineraries</span><span>▣ Hotels & stays</span><span>✈ Flights</span><span>⌖ Activities</span></div></div>
+    <div class="consumer-hero-art"><div class="sun"></div><div class="coast coast-a"></div><div class="coast coast-b"></div><div class="hero-art-label">Explore more with VoyageDesk AI</div></div>
+  </div>
+  <form class="quick-planner" id="quickPlanner">
+    <div class="quick-tabs"><button type="button" class="active" data-view="new">✈ Plan a New Trip</button><span>◎ Explore Destinations</span><span>✦ Use My Ideas</span></div>
+    <div class="quick-grid"><label>Where are you going?<input id="quickDestination" placeholder="Paris, Tokyo, Istanbul"></label><label>Leaving from<input id="quickOrigin" placeholder="Miami, New York"></label><label>Departure<input id="quickDepart" type="date"></label><label>Return<input id="quickReturn" type="date"></label><button type="button" class="primary quick-cta" id="quickCreate">✦ Create My Trip Plan →</button></div>
+  </form>
+  <div class="home-section-head"><h3>Popular Destinations</h3><button class="text-btn" data-view="new">Plan somewhere else →</button></div>
+  <div class="destination-grid"><button class="destination-card paris" data-destination="Paris"><span>Paris<small>France</small></span></button><button class="destination-card santorini" data-destination="Santorini"><span>Santorini<small>Greece</small></span></button><button class="destination-card rome" data-destination="Rome"><span>Rome<small>Italy</small></span></button><button class="destination-card istanbul" data-destination="Istanbul"><span>Istanbul<small>Türkiye</small></span></button><button class="destination-card bali" data-destination="Bali"><span>Bali<small>Indonesia</small></span></button><button class="destination-card newyork" data-destination="New York"><span>New York<small>USA</small></span></button></div>
+  <div class="home-section-head"><h3>How It Works</h3></div><div class="how-grid"><div><b>1</b><strong>Tell Us Your Plans</strong><small>Share your destination, dates, budget, and preferences.</small></div><div><b>2</b><strong>AI Creates Your Trip</strong><small>Get a personalized day-by-day itinerary.</small></div><div><b>3</b><strong>Explore & Book</strong><small>Compare flights, hotels, activities, and more.</small></div><div><b>4</b><strong>Save & Enjoy</strong><small>Keep your trip, refine it, and make it real.</small></div></div>
+  <div class="stats consumer-stats"><div class="stat"><span>Saved trips</span><strong id="tripCount">0</strong></div><div class="stat"><span>Trip plans</span><strong id="draftCount">0</strong></div><div class="stat"><span>Live inventory</span><strong id="liveStatus">—</strong></div></div>
+  <div class="panel recent-panel"><div class="panel-head"><h3>Recent trips</h3><button class="text-btn" data-view="trips">View all</button></div><div id="recentTrips" class="trip-list empty">No trips yet.</div></div>
+  <p id="providerStatus" class="provider-status hidden">Checking connections…</p>
+</section>
 <section id="new" class="view"><form id="tripForm" class="panel form-panel consumer-trip-form">
 <div class="planner-intro"><span class="badge">PLAN MY TRIP</span><h2>Where do you want to go?</h2><p>Give us the essentials. VoyageDesk AI will turn them into a personalized day-by-day trip plan.</p></div>
 <div class="planner-step"><div class="step-title"><span>1</span><div><strong>Your journey</strong><small>Where, when, and who is traveling?</small></div></div><div class="grid two">
