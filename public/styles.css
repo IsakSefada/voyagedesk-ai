@@ -110,3 +110,38 @@
   background:linear-gradient(180deg,transparent 62%,rgba(3,14,35,.12) 74%,rgba(3,14,35,.62) 100%)!important;
 }
 .destination-card::after{display:none!important}
+
+
+/* v0.4 premium homepage polish */
+.quick-planner{margin-top:22px;margin-bottom:38px}
+.home-section-head{margin-top:34px;margin-bottom:16px}
+.destination-grid{gap:14px}
+.destination-card{
+  height:205px;
+  border-radius:17px;
+  box-shadow:0 10px 26px rgba(22,42,75,.14);
+  filter:saturate(1.06) brightness(1.02);
+}
+.destination-card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 14px 30px rgba(22,42,75,.18);
+  filter:saturate(1.09) brightness(1.04);
+}
+.destination-card:before{
+  background:linear-gradient(180deg,transparent 58%,rgba(3,14,35,.08) 68%,rgba(3,14,35,.76) 100%)!important;
+}
+.destination-card span{
+  left:15px;
+  bottom:14px;
+  font-size:19px;
+  line-height:1.08;
+  text-shadow:0 1px 3px rgba(0,0,0,.38);
+}
+.destination-card small{
+  font-size:11px;
+  margin-top:5px;
+  opacity:.96;
+}
+.how-grid>div{box-shadow:0 8px 22px rgba(20,44,84,.07)}
+@media(max-width:1100px){.destination-card{height:215px}}
+@media(max-width:700px){.destination-card{height:190px}}
