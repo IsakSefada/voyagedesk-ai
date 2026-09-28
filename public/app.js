@@ -100,7 +100,7 @@ $('#resetForm')?.addEventListener('submit',async e=>{
 });
 $('#logoutBtn')?.addEventListener('click',async()=>{try{await fetch('/api/auth/logout',{method:'POST'});}catch{}setSession(null);currentUser=null;$('#signedInEmail').textContent='';$('#logoutBtn').classList.add('hidden');$('#authGate').classList.remove('hidden');setAuthMode('login');});
 
-function setView(name){$('.view').forEach(v=>v.classList.toggle('active',v.id===name));$('.nav').forEach(v=>v.classList.toggle('active',v.dataset.view===name));if($('#pageTitle'))$('#pageTitle').textContent={new:'Plan My Trip',trips:'My Trips',clients:'Clients',settings:'Branding'}[name]||'Welcome to VoyageDesk AI';window.scrollTo({top:0,behavior:'smooth'});}$('[data-view]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));$('#newTripTop')?.addEventListener('click',()=>setView('new'));$('#heroNew')?.addEventListener('click',()=>setView('new'));
+function setView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===name));document.querySelectorAll('.nav').forEach(v=>v.classList.toggle('active',v.dataset.view===name));const title=document.querySelector('#pageTitle');if(title)title.textContent={new:'Plan My Trip',trips:'My Trips',clients:'Clients',settings:'Branding'}[name]||'Welcome to VoyageDesk AI';window.scrollTo({top:0,behavior:'smooth'});}document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));document.querySelector('#newTripTop')?.addEventListener('click',()=>setView('new'));document.querySelector('#heroNew')?.addEventListener('click',()=>setView('new'));
 
 
 // Smart city and airport autocomplete. This local catalogue keeps the MVP fast and predictable;
