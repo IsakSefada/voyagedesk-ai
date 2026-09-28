@@ -258,18 +258,18 @@ function applyBrand(){
   const b=getBrand(),name=b.name||'VoyageDesk Travel',advisor=b.advisor||'Travel Advisor',tagline=b.tagline||'Your journey. Our expertise.';
   $('#brandNamePrint').textContent=name;
   $('#brandContactPrint').textContent=[advisor,b.email,b.phone,b.website,b.address].filter(Boolean).join(' · ');
-  $('#sidebarAgencyName').textContent=name;$('#sidebarAdvisor').textContent=advisor;$('#sidebarTagline').textContent=tagline;
-  $('#sidebarPhone').textContent=b.phone?`☎ ${b.phone}`:'☎ Add phone';$('#sidebarEmail').textContent=b.email?`✉ ${b.email}`:'✉ Add email';$('#sidebarWebsite').textContent=b.website?`◎ ${b.website}`:'◎ Add website';$('#sidebarAddress').textContent=b.address?`⌖ ${b.address}`:'⌖ Add address';
+  if($('#sidebarAgencyName'))$('#sidebarAgencyName').textContent=name;if($('#sidebarAdvisor'))$('#sidebarAdvisor').textContent=advisor;if($('#sidebarTagline'))$('#sidebarTagline').textContent=tagline;
+  if($('#sidebarPhone'))$('#sidebarPhone').textContent=b.phone?`☎ ${b.phone}`:'☎ Add phone';if($('#sidebarEmail'))$('#sidebarEmail').textContent=b.email?`✉ ${b.email}`:'✉ Add email';if($('#sidebarWebsite'))$('#sidebarWebsite').textContent=b.website?`◎ ${b.website}`:'◎ Add website';if($('#sidebarAddress'))$('#sidebarAddress').textContent=b.address?`⌖ ${b.address}`:'⌖ Add address';
   const logo=b.logo||'';
   for(const id of ['brandLogoPrint','sidebarLogo','settingsLogoPreview']){const el=$('#'+id);if(logo){el.src=logo;el.classList.remove('hidden');}else{el.removeAttribute('src');el.classList.add('hidden');}}
-  $('#sidebarLogoPlaceholder').classList.toggle('hidden',!!logo);$('#settingsLogoPlaceholder').classList.toggle('hidden',!!logo);$('#removeLogo').classList.toggle('hidden',!logo);
+  $('#sidebarLogoPlaceholder')?.classList.toggle('hidden',!!logo);$('#settingsLogoPlaceholder')?.classList.toggle('hidden',!!logo);$('#removeLogo')?.classList.toggle('hidden',!logo);
 }
 function loadBrandForm(){const b=getBrand();$('#brandName').value=b.name||'';$('#advisorName').value=b.advisor||'';$('#brandEmail').value=b.email||'';$('#brandPhone').value=b.phone||'';$('#brandWebsite').value=b.website||'';$('#brandAddress').value=b.address||'';$('#brandTagline').value=b.tagline||'';$('#defaultLanguage').value=b.defaultLanguage||'English';$('#defaultCurrency').value=b.defaultCurrency||'USD';applyBrand();}
 async function saveBrandForm(){const old=getBrand();const profile={...old,name:$('#brandName').value.trim(),advisor:$('#advisorName').value.trim(),email:$('#brandEmail').value.trim(),phone:$('#brandPhone').value.trim(),website:$('#brandWebsite').value.trim(),address:$('#brandAddress').value.trim(),tagline:$('#brandTagline').value.trim(),defaultLanguage:$('#defaultLanguage').value||'English',defaultCurrency:$('#defaultCurrency').value||'USD'};setBrand(profile);if(cloudEnabled&&currentUser){const r=await fetch('/api/agency-profile',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(profile)});if(!r.ok){const d=await r.json().catch(()=>({}));alert(d.error||'Branding saved locally, but cloud save failed.');}}applyTripDefaults();$('#saveBrand').textContent='✓ Saved';setTimeout(()=>$('#saveBrand').textContent='Save Branding',1400);}
 $('#saveBrand').onclick=saveBrandForm;
 $('#sidebarBrandEdit')?.addEventListener('click',()=>setView('settings'));$('#sidebarContactEdit')?.addEventListener('click',()=>setView('settings'));
 $('#changeLogo')?.addEventListener('click',()=>$('#logoFile')?.click());$('#settingsChooseLogo')?.addEventListener('click',()=>$('#logoFile')?.click());
-$('#logoFile').addEventListener('change',e=>{const file=e.target.files?.[0];if(!file)return;if(file.size>2*1024*1024){alert('Please choose a logo smaller than 2 MB.');e.target.value='';return;}const reader=new FileReader();reader.onload=()=>{const b=getBrand();setBrand({...b,logo:reader.result});};reader.readAsDataURL(file);e.target.value='';});
+$('#logoFile')?.addEventListener('change',e=>{const file=e.target.files?.[0];if(!file)return;if(file.size>2*1024*1024){alert('Please choose a logo smaller than 2 MB.');e.target.value='';return;}const reader=new FileReader();reader.onload=()=>{const b=getBrand();setBrand({...b,logo:reader.result});};reader.readAsDataURL(file);e.target.value='';});
 function removeLogo(){const b=getBrand();delete b.logo;setBrand(b);}$('#removeLogo')?.addEventListener('click',removeLogo);$('#settingsRemoveLogo')?.addEventListener('click',removeLogo);
 
 async function loadCloudBrand(){
