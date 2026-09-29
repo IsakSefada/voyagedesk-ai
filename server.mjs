@@ -127,6 +127,33 @@ async function pexelsSearch(query, perPage=6){
 }
 
 
+async function googlePlacesTextSearch(query, maxResultCount=10){
+  const key=process.env.GOOGLE_PLACES_API_KEY;
+  if(!key)throw new Error('Google Places is not connected.');
+  const r=await fetch(`${GOOGLE_PLACES_BASE}/places:searchText`,{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'X-Goog-Api-Key':key,
+      'X-Goog-FieldMask':'places.id,places.displayName,places.formattedAddress,places.primaryType,places.priceLevel,places.rating,places.userRatingCount,places.googleMapsUri'
+    },
+    body:JSON.stringify({textQuery:query,maxResultCount:Math.min(20,Math.max(1,Number(maxResultCount)||10))})
+  });
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(data?.error?.message||`Google Places request failed (${r.status})`);
+  return (data.places||[]).map(p=>({
+    id:p.id,
+    name:p.displayName?.text||'Restaurant',
+    address:p.formattedAddress||'',
+    type:p.primaryType||'',
+    priceLevel:p.priceLevel||'',
+    rating:p.rating??null,
+    userRatingCount:p.userRatingCount??null,
+    googleMapsUri:p.googleMapsUri||''
+  }));
+}
+
+
 const SUPABASE_URL=(process.env.SUPABASE_URL||'').trim().replace(/\/$/,'');
 const SUPABASE_KEY=(process.env.SUPABASE_PUBLISHABLE_KEY||process.env.SUPABASE_ANON_KEY||'').trim();
 const CLOUD_ENABLED=!!(SUPABASE_URL&&SUPABASE_KEY);
