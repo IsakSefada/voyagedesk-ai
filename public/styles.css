@@ -158,3 +158,12 @@
 }
 .sidebar-explore strong,.sidebar-explore small{position:relative;z-index:1;text-shadow:0 1px 4px rgba(0,0,0,.38)}
 .sidebar-explore small{color:#fff}
+
+/* Consumer trip-generation progress */
+.trip-progress{max-width:720px;margin:28px auto;padding:22px 26px;display:flex;align-items:center;justify-content:center;gap:18px;text-align:left;border:1px solid rgba(79,70,229,.16);border-radius:18px;background:#fff;box-shadow:0 14px 38px rgba(15,23,42,.10);font-size:16px}
+.trip-progress strong{display:block;font-size:18px;margin-bottom:5px}
+.trip-progress span{display:block;color:#64748b;font-size:14px}
+.trip-progress-spinner{width:34px;height:34px;flex:0 0 34px;border:4px solid #e0e7ff;border-top-color:#4f46e5;border-radius:50%;animation:tripSpin .8s linear infinite}
+.trip-progress-check{width:34px;height:34px;flex:0 0 34px;display:grid;place-items:center;border-radius:50%;background:#ecfdf5;font-size:20px;font-weight:800}
+@keyframes tripSpin{to{transform:rotate(360deg)}}
+@media(max-width:640px){.trip-progress{margin:20px 12px;padding:18px;align-items:flex-start}.trip-progress strong{font-size:16px}}
