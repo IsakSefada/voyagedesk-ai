@@ -226,7 +226,7 @@ function bookingLinks(q){
 }
 
 const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`http://${req.headers.host}`);
-  if(url.pathname==='/api/status'&&req.method==='GET')return send(res,200,{openai:!!process.env.OPENAI_API_KEY,amadeus:!!(process.env.AMADEUS_API_KEY&&process.env.AMADEUS_API_SECRET),amadeusEnv:process.env.AMADEUS_ENV||'test',pexels:!!process.env.PEXELS_API_KEY,supabase:CLOUD_ENABLED,storageMode:CLOUD_ENABLED?'cloud':'local'});
+  if(url.pathname==='/api/status'&&req.method==='GET')return send(res,200,{openai:!!process.env.OPENAI_API_KEY,amadeus:!!(process.env.AMADEUS_API_KEY&&process.env.AMADEUS_API_SECRET),amadeusEnv:process.env.AMADEUS_ENV||'test',pexels:!!process.env.PEXELS_API_KEY,googlePlaces:!!process.env.GOOGLE_PLACES_API_KEY,supabase:CLOUD_ENABLED,storageMode:CLOUD_ENABLED?'cloud':'local'});
   if(url.pathname==='/api/auth/signup'&&req.method==='POST'){if(!CLOUD_ENABLED)return send(res,503,{error:'Cloud login is not configured yet.'});const body=await parseBody(req);try{const {data}=await supaFetch('/auth/v1/signup',{method:'POST',body:{email:body.email,password:body.password,data:{full_name:body.name||''}}});return send(res,200,data);}catch(err){return send(res,400,{error:err.message});}}
   if(url.pathname==='/api/auth/login'&&req.method==='POST'){if(!CLOUD_ENABLED)return send(res,503,{error:'Cloud login is not configured yet.'});const body=await parseBody(req);try{const {data}=await supaFetch('/auth/v1/token?grant_type=password',{method:'POST',body:{email:body.email,password:body.password}});return send(res,200,data);}catch(err){return send(res,400,{error:err.message});}}
   if(url.pathname==='/api/auth/recover'&&req.method==='POST'){
@@ -261,6 +261,15 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
   if(url.pathname==='/api/live/flights'&&req.method==='POST'){const body=await parseBody(req);try{return send(res,200,{provider:'Amadeus',results:await liveFlights(body)});}catch(err){return send(res,503,{error:err.message,provider:'Amadeus'});}}
   if(url.pathname==='/api/live/hotels'&&req.method==='POST'){const body=await parseBody(req);try{return send(res,200,{provider:'Amadeus',results:await liveHotels(body)});}catch(err){return send(res,503,{error:err.message,provider:'Amadeus'});}}
   if(url.pathname==='/api/photos/search'&&req.method==='GET'){const q=url.searchParams.get('q')||'';if(!q.trim())return send(res,400,{error:'Photo search needs a location or attraction.'});try{return send(res,200,{provider:'Pexels',photos:await pexelsSearch(q,url.searchParams.get('per_page')||6)});}catch(err){return send(res,503,{error:err.message,provider:'Pexels'});}}
+  if(url.pathname==='/api/places/restaurants'&&req.method==='GET'){
+    const destination=(url.searchParams.get('destination')||'').trim();
+    const area=(url.searchParams.get('area')||'').trim();
+    const cuisine=(url.searchParams.get('cuisine')||'').trim();
+    if(!destination)return send(res,400,{error:'Destination is required.'});
+    const query=[cuisine||'restaurants',area,'in',destination].filter(Boolean).join(' ');
+    try{return send(res,200,{provider:'Google Places',query,results:await googlePlacesTextSearch(query,url.searchParams.get('limit')||10)});}
+    catch(err){return send(res,503,{error:err.message,provider:'Google Places'});}
+  }
   if(url.pathname==='/api/booking-links'&&req.method==='POST')return send(res,200,bookingLinks(await parseBody(req)));
   const match=url.pathname.match(/^\/api\/trips\/([^/]+)$/);
   if(match&&req.method==='PUT'){
