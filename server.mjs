@@ -137,7 +137,7 @@ async function googlePlacesTextSearch(query, maxResultCount=10){
       'X-Goog-Api-Key':key,
       'X-Goog-FieldMask':'places.id,places.displayName,places.formattedAddress,places.primaryType,places.priceLevel,places.rating,places.userRatingCount,places.googleMapsUri'
     },
-    body:JSON.stringify({textQuery:query,maxResultCount:Math.min(20,Math.max(1,Number(maxResultCount)||10))})
+    body:JSON.stringify({textQuery:query,includedType:'restaurant',strictTypeFiltering:true,maxResultCount:Math.min(20,Math.max(1,Number(maxResultCount)||10))})
   });
   const data=await r.json().catch(()=>({}));
   if(!r.ok)throw new Error(data?.error?.message||`Google Places request failed (${r.status})`);
@@ -266,7 +266,7 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
     const area=(url.searchParams.get('area')||'').trim();
     const cuisine=(url.searchParams.get('cuisine')||'').trim();
     if(!destination)return send(res,400,{error:'Destination is required.'});
-    const query=[cuisine||'restaurants',area,'in',destination].filter(Boolean).join(' ');
+    const query=[cuisine,'restaurants',area?`in ${area}`:'',`in ${destination}`].filter(Boolean).join(' ');
     try{return send(res,200,{provider:'Google Places',query,results:await googlePlacesTextSearch(query,url.searchParams.get('limit')||10)});}
     catch(err){return send(res,503,{error:err.message,provider:'Google Places'});}
   }
