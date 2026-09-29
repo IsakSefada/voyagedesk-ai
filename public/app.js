@@ -33,9 +33,9 @@ function setAuthMode(mode){
   $('#authTabs').classList.toggle('hidden',isForgot||isReset);
   $('#showLogin').classList.toggle('active',isLogin);
   $('#showSignup').classList.toggle('active',isSignup);
-  $('#authTitle').textContent=isReset?'Reset Your Password':isForgot?'Password Recovery':'Advisor Cloud';
-  $('#authIntro').textContent=isReset?'Choose a new password for your VoyageDesk agent account.':isForgot?'Enter your account email and we will send a secure reset link.':'Sign in to access your private clients, trips, and agency workspace.';
-  $('#authFooter').textContent=isReset?'After changing the password, you can sign in normally.':'Your account keeps each advisor’s records private.';
+  $('#authTitle').textContent=isReset?'Reset Your Password':isForgot?'Password Recovery':'Your Travel Account';
+  $('#authIntro').textContent=isReset?'Choose a new password for your VoyageDesk account.':isForgot?'Enter your account email and we will send a secure reset link.':'Sign in to save, revisit, and manage your personal trips.';
+  $('#authFooter').textContent=isReset?'After changing the password, you can sign in normally.':'Your account keeps your saved trips private.';
   authMessage('');
 }
 function showAuthTab(tab){setAuthMode(tab);}
@@ -68,8 +68,8 @@ function detectRecoverySession(){
 async function verifyCloudSession(){
   if(!cloudEnabled){$('#authGate')?.classList.add('hidden');currentUser=null;return true;}
   if(detectRecoverySession())return false;
-  const s=getSession();if(!s?.access_token){$('#authGate')?.classList.remove('hidden');setAuthMode('login');return false;}
-  let r=await fetch('/api/auth/user');if(!r.ok){setSession(null);$('#authGate')?.classList.remove('hidden');setAuthMode('login');return false;}
+  const s=getSession();if(!s?.access_token){currentUser=null;$('#authGate')?.classList.add('hidden');$('#logoutBtn')?.classList.add('hidden');return true;}
+  let r=await fetch('/api/auth/user');if(!r.ok){setSession(null);currentUser=null;$('#authGate')?.classList.add('hidden');$('#logoutBtn')?.classList.add('hidden');return true;}
   currentUser=await r.json();$('#authGate')?.classList.add('hidden');$('#signedInEmail').textContent=currentUser.email||'';$('#logoutBtn').classList.remove('hidden');return true;
 }
 $('#loginForm')?.addEventListener('submit',async e=>{e.preventDefault();authMessage('Signing in…');const r=await nativeFetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:$('#loginEmail').value.trim(),password:$('#loginPassword').value})});const d=await r.json();if(!r.ok)return authMessage(d.error||'Sign in failed.',true);setSession(d);authMessage('Signed in.');await initializeSignedInWorkspace();});
@@ -98,7 +98,8 @@ $('#resetForm')?.addEventListener('submit',async e=>{
   setAuthMode('login');
   authMessage('Password changed successfully. Sign in with your new password.');
 });
-$('#logoutBtn')?.addEventListener('click',async()=>{try{await fetch('/api/auth/logout',{method:'POST'});}catch{}setSession(null);currentUser=null;$('#signedInEmail').textContent='';$('#logoutBtn').classList.add('hidden');$('#authGate').classList.remove('hidden');setAuthMode('login');});
+$('#accountBtn')?.addEventListener('click',()=>{$('#authGate')?.classList.remove('hidden');setAuthMode('login');});
+$('#logoutBtn')?.addEventListener('click',async()=>{try{await fetch('/api/auth/logout',{method:'POST'});}catch{}setSession(null);currentUser=null;$('#signedInEmail').textContent='';$('#logoutBtn').classList.add('hidden');$('#authGate').classList.add('hidden');});
 
 function setView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===name));document.querySelectorAll('.nav').forEach(v=>v.classList.toggle('active',v.dataset.view===name));const title=document.querySelector('#pageTitle');if(title)title.textContent={new:'Plan My Trip',trips:'My Trips',clients:'Clients',settings:'Branding'}[name]||'Welcome to VoyageDesk AI';window.scrollTo({top:0,behavior:'smooth'});}document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));document.querySelector('#newTripTop')?.addEventListener('click',()=>setView('new'));document.querySelector('#heroNew')?.addEventListener('click',()=>setView('new'));
 
@@ -352,7 +353,7 @@ $('#tripSearch')?.addEventListener('input',renderTripManager);$('#tripStatusFilt
 async function loadTrips(){const r=await fetch('/api/trips');savedTripsCache=await r.json();$('#tripCount').textContent=savedTripsCache.length;$('#draftCount').textContent=savedTripsCache.filter(t=>(t.status||'Draft')==='Draft').length;renderTripManager();$('#recentTrips').innerHTML=savedTripsCache.length?savedTripsCache.slice(0,4).map(t=>`<div class="trip-row clickable" data-recent-open="${escapeHtml(t.id)}"><div><strong>${escapeHtml(t.title||t.clientName||'Untitled trip')}</strong><small>${escapeHtml(t.clientName||'')}</small></div><div>${escapeHtml(t.destinations||'')}</div><div>${escapeHtml(tripDateLabel(t))}</div><span class="status-pill">${escapeHtml(t.status||'Draft')}</span></div>`).join(''):'No trips yet.';$$('[data-recent-open]').forEach(x=>x.onclick=()=>openSavedTrip(x.dataset.recentOpen));}
 async function status(){try{const r=await fetch('/api/status'),s=await r.json();cloudEnabled=!!s.supabase;$('#providerStatus').textContent=`OpenAI ${s.openai?'connected':'not connected'} · Amadeus ${s.amadeus?'connected':'not connected'} · Cloud ${s.supabase?'connected':'local mode'}`;$('#liveStatus').textContent=s.amadeus?'Ready':'Setup';$('#storageBadge').textContent=s.supabase?'CLOUD':'LOCAL';$('#storageBadge').classList.toggle('cloud',!!s.supabase);$('#cloudModeLabel').textContent=s.supabase?'Private cloud account':'Local prototype mode';return s;}catch{return {supabase:false};}}
 async function initializeSignedInWorkspace(){const ok=await verifyCloudSession();if(!ok)return;await loadCloudBrand();loadBrandForm();applyTripDefaults();await Promise.all([loadTrips(),loadClients()]);}
-async function initApp(){await status();if(cloudEnabled){const ok=await verifyCloudSession();if(!ok)return;}else{$('#authGate').classList.add('hidden');$('#logoutBtn').classList.add('hidden');}await initializeSignedInWorkspace();}
+async function initApp(){await status();const ok=await verifyCloudSession();if(!ok)return;if(currentUser){await loadCloudBrand();loadBrandForm();applyTripDefaults();await Promise.all([loadTrips(),loadClients()]);}else{$('#authGate')?.classList.add('hidden');$('#logoutBtn')?.classList.add('hidden');applyTripDefaults();}}
 initApp();
 
 
