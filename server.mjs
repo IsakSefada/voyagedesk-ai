@@ -34,6 +34,7 @@ const PORT = Number(process.env.PORT || 3000);
 const MODEL = process.env.OPENAI_MODEL || 'gpt-5.5';
 const AMADEUS_BASE = process.env.AMADEUS_ENV === 'production' ? 'https://api.amadeus.com' : 'https://test.api.amadeus.com';
 const PEXELS_BASE = 'https://api.pexels.com/v1';
+const GOOGLE_PLACES_BASE = 'https://places.googleapis.com/v1';
 
 const mime = {'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml'};
 async function readTrips(){ try{return JSON.parse(await readFile(dataFile,'utf8'));}catch{return [];} }
