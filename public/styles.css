@@ -192,3 +192,41 @@
 @media(max-width:640px){
   .trip-progress{width:calc(100vw - 28px);margin:0;padding:22px 20px}
 }
+
+/* Brighter, more prominent progress treatment with the page still visible */
+.trip-progress{
+  width:min(760px,calc(100vw - 40px));
+  padding:34px 38px;
+  border:2px solid #6366f1;
+  border-radius:22px;
+  background:linear-gradient(135deg,#ffffff 0%,#f5f7ff 100%);
+  box-shadow:0 24px 65px rgba(79,70,229,.30);
+}
+.trip-progress::before{
+  background:rgba(15,23,42,.10);
+  backdrop-filter:none;
+}
+.trip-progress strong{
+  font-size:22px;
+  font-weight:800;
+  color:#3730a3;
+  line-height:1.25;
+}
+.trip-progress span{
+  margin-top:7px;
+  font-size:15px;
+  font-weight:600;
+  color:#475569;
+}
+.trip-progress-spinner{
+  width:46px;
+  height:46px;
+  flex-basis:46px;
+  border-width:5px;
+  border-color:#e0e7ff;
+  border-top-color:#4f46e5;
+}
+@media(max-width:640px){
+  .trip-progress{width:calc(100vw - 28px);padding:26px 22px}
+  .trip-progress strong{font-size:18px}
+}
