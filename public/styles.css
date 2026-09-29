@@ -167,3 +167,28 @@
 .trip-progress-check{width:34px;height:34px;flex:0 0 34px;display:grid;place-items:center;border-radius:50%;background:#ecfdf5;font-size:20px;font-weight:800}
 @keyframes tripSpin{to{transform:rotate(360deg)}}
 @media(max-width:640px){.trip-progress{margin:20px 12px;padding:18px;align-items:flex-start}.trip-progress strong{font-size:16px}}
+
+/* Keep trip-generation progress clearly in front while the plan is being built */
+.trip-progress{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  z-index:10000;
+  width:min(680px,calc(100vw - 40px));
+  margin:0;
+  padding:28px 32px;
+  border:2px solid rgba(79,70,229,.22);
+  box-shadow:0 24px 70px rgba(15,23,42,.28);
+}
+.trip-progress::before{
+  content:"";
+  position:fixed;
+  inset:-100vh -100vw;
+  z-index:-1;
+  background:rgba(15,23,42,.28);
+  backdrop-filter:blur(2px);
+}
+@media(max-width:640px){
+  .trip-progress{width:calc(100vw - 28px);margin:0;padding:22px 20px}
+}
