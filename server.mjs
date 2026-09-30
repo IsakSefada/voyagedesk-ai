@@ -35,6 +35,7 @@ const MODEL = process.env.OPENAI_MODEL || 'gpt-5.5';
 const AMADEUS_BASE = process.env.AMADEUS_ENV === 'production' ? 'https://api.amadeus.com' : 'https://test.api.amadeus.com';
 const PEXELS_BASE = 'https://api.pexels.com/v1';
 const GOOGLE_PLACES_BASE = 'https://places.googleapis.com/v1';
+const VIATOR_SANDBOX_BASE = 'https://api.sandbox.viator.com/partner';
 
 const mime = {'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml'};
 async function readTrips(){ try{return JSON.parse(await readFile(dataFile,'utf8'));}catch{return [];} }
@@ -166,6 +167,15 @@ async function googlePlacesTextSearch(query, maxResultCount=10){
 }
 
 
+async function viatorSandboxGet(endpoint){
+  const key=process.env.VIATOR_SANDBOX_API_KEY;
+  if(!key)throw new Error('Viator Sandbox is not connected.');
+  const r=await fetch(`${VIATOR_SANDBOX_BASE}${endpoint}`,{headers:{'exp-api-key':key,'Accept-Language':'en-US','Accept':'application/json;version=2.0'}});
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(data?.message||`Viator Sandbox request failed (${r.status})`);
+  return data;
+}
+
 const SUPABASE_URL=(process.env.SUPABASE_URL||'').trim().replace(/\/$/,'');
 const SUPABASE_KEY=(process.env.SUPABASE_PUBLISHABLE_KEY||process.env.SUPABASE_ANON_KEY||'').trim();
 const CLOUD_ENABLED=!!(SUPABASE_URL&&SUPABASE_KEY);
@@ -238,7 +248,7 @@ function bookingLinks(q){
 }
 
 const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`http://${req.headers.host}`);
-  if(url.pathname==='/api/status'&&req.method==='GET')return send(res,200,{openai:!!process.env.OPENAI_API_KEY,amadeus:!!(process.env.AMADEUS_API_KEY&&process.env.AMADEUS_API_SECRET),amadeusEnv:process.env.AMADEUS_ENV||'test',pexels:!!process.env.PEXELS_API_KEY,googlePlaces:!!process.env.GOOGLE_PLACES_API_KEY,supabase:CLOUD_ENABLED,storageMode:CLOUD_ENABLED?'cloud':'local'});
+  if(url.pathname==='/api/status'&&req.method==='GET')return send(res,200,{openai:!!process.env.OPENAI_API_KEY,amadeus:!!(process.env.AMADEUS_API_KEY&&process.env.AMADEUS_API_SECRET),amadeusEnv:process.env.AMADEUS_ENV||'test',pexels:!!process.env.PEXELS_API_KEY,googlePlaces:!!process.env.GOOGLE_PLACES_API_KEY,viatorSandbox:!!process.env.VIATOR_SANDBOX_API_KEY,supabase:CLOUD_ENABLED,storageMode:CLOUD_ENABLED?'cloud':'local'});
   if(url.pathname==='/api/auth/signup'&&req.method==='POST'){if(!CLOUD_ENABLED)return send(res,503,{error:'Cloud login is not configured yet.'});const body=await parseBody(req);try{const {data}=await supaFetch('/auth/v1/signup',{method:'POST',body:{email:body.email,password:body.password,data:{full_name:body.name||''}}});return send(res,200,data);}catch(err){return send(res,400,{error:err.message});}}
   if(url.pathname==='/api/auth/login'&&req.method==='POST'){if(!CLOUD_ENABLED)return send(res,503,{error:'Cloud login is not configured yet.'});const body=await parseBody(req);try{const {data}=await supaFetch('/auth/v1/token?grant_type=password',{method:'POST',body:{email:body.email,password:body.password}});return send(res,200,data);}catch(err){return send(res,400,{error:err.message});}}
   if(url.pathname==='/api/auth/recover'&&req.method==='POST'){
@@ -281,6 +291,10 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
     const query=[cuisine,'restaurants',area?`in ${area}`:'',`in ${destination}`].filter(Boolean).join(' ');
     try{return send(res,200,{provider:'Google Places',query,results:await googlePlacesTextSearch(query,url.searchParams.get('limit')||10)});}
     catch(err){return send(res,503,{error:err.message,provider:'Google Places'});}
+  }
+  if(url.pathname==='/api/viator/test'&&req.method==='GET'){
+    try{const data=await viatorSandboxGet('/destinations');const destinations=Array.isArray(data)?data:(data.destinations||[]);const istanbul=destinations.find(d=>String(d.name||'').toLowerCase()==='istanbul');return send(res,200,{provider:'Viator Sandbox',connected:true,destination:istanbul||null,totalDestinations:destinations.length});}
+    catch(err){return send(res,503,{provider:'Viator Sandbox',connected:false,error:err.message});}
   }
   if(url.pathname==='/api/booking-links'&&req.method==='POST')return send(res,200,bookingLinks(await parseBody(req)));
   const match=url.pathname.match(/^\/api\/trips\/([^/]+)$/);
