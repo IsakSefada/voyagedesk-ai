@@ -230,3 +230,7 @@
   .trip-progress{width:calc(100vw - 28px);padding:26px 22px}
   .trip-progress strong{font-size:18px}
 }
+
+/* TripFiver sidebar brand logo */
+.consumer-logo{padding:2px 8px 28px}
+.tripfiver-logo{display:block;width:100%;max-width:205px;height:auto;object-fit:contain;border-radius:12px}
