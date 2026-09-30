@@ -34,7 +34,7 @@ function setAuthMode(mode){
   $('#showLogin').classList.toggle('active',isLogin);
   $('#showSignup').classList.toggle('active',isSignup);
   $('#authTitle').textContent=isReset?'Reset Your Password':isForgot?'Password Recovery':'Your Travel Account';
-  $('#authIntro').textContent=isReset?'Choose a new password for your VoyageDesk account.':isForgot?'Enter your account email and we will send a secure reset link.':'Sign in to save, revisit, and manage your personal trips.';
+  $('#authIntro').textContent=isReset?'Choose a new password for your TripFiver account.':isForgot?'Enter your account email and we will send a secure reset link.':'Sign in to save, revisit, and manage your personal trips.';
   $('#authFooter').textContent=isReset?'After changing the password, you can sign in normally.':'Your account keeps your saved trips private.';
   authMessage('');
 }
@@ -101,7 +101,7 @@ $('#resetForm')?.addEventListener('submit',async e=>{
 $('#accountBtn')?.addEventListener('click',()=>{$('#authGate')?.classList.remove('hidden');setAuthMode('login');});
 $('#logoutBtn')?.addEventListener('click',async()=>{try{await fetch('/api/auth/logout',{method:'POST'});}catch{}setSession(null);currentUser=null;$('#signedInEmail').textContent='';$('#logoutBtn').classList.add('hidden');$('#authGate').classList.add('hidden');});
 
-function setView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===name));document.querySelectorAll('.nav').forEach(v=>v.classList.toggle('active',v.dataset.view===name));const title=document.querySelector('#pageTitle');if(title)title.textContent={new:'Plan My Trip',trips:'My Trips',clients:'Clients',settings:'Branding'}[name]||'Welcome to VoyageDesk AI';window.scrollTo({top:0,behavior:'smooth'});}document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));document.querySelector('#newTripTop')?.addEventListener('click',()=>setView('new'));document.querySelector('#heroNew')?.addEventListener('click',()=>setView('new'));
+function setView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===name));document.querySelectorAll('.nav').forEach(v=>v.classList.toggle('active',v.dataset.view===name));const title=document.querySelector('#pageTitle');if(title)title.textContent={new:'Plan My Trip',trips:'My Trips',clients:'Clients',settings:'Branding'}[name]||'Welcome to TripFiver';window.scrollTo({top:0,behavior:'smooth'});}document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));document.querySelector('#newTripTop')?.addEventListener('click',()=>setView('new'));document.querySelector('#heroNew')?.addEventListener('click',()=>setView('new'));
 
 
 // Smart city and airport autocomplete. This local catalogue keeps the MVP fast and predictable;
@@ -256,7 +256,7 @@ $('#saveTrip').onclick=async()=>{syncProposalEdits();if(!currentTrip||!currentIt
 function getBrand(){try{return JSON.parse(localStorage.getItem('voyagedesk-brand')||'{}');}catch{return{};}}
 function setBrand(b){localStorage.setItem('voyagedesk-brand',JSON.stringify(b));applyBrand();loadBrandForm();}
 function applyBrand(){
-  const b=getBrand(),name=b.name||'VoyageDesk Travel',advisor=b.advisor||'Travel Advisor',tagline=b.tagline||'Your journey. Our expertise.';
+  const b=getBrand(),name=b.name||'TripFiver',advisor=b.advisor||'Travel Advisor',tagline=b.tagline||'Your journey. Our expertise.';
   $('#brandNamePrint').textContent=name;
   $('#brandContactPrint').textContent=[advisor,b.email,b.phone,b.website,b.address].filter(Boolean).join(' · ');
   if($('#sidebarAgencyName'))$('#sidebarAgencyName').textContent=name;if($('#sidebarAdvisor'))$('#sidebarAdvisor').textContent=advisor;if($('#sidebarTagline'))$('#sidebarTagline').textContent=tagline;
@@ -389,4 +389,4 @@ $('#quickCreate')?.addEventListener('click',e=>{
   );
 });
 $$('[data-destination]').forEach(card=>card.addEventListener('click',()=>openPlannerWithQuickValues(card.dataset.destination)));
-$$('.nav-coming').forEach(btn=>btn.addEventListener('click',()=>alert('This feature is planned for a future VoyageDesk consumer update.')));
+$$('.nav-coming').forEach(btn=>btn.addEventListener('click',()=>alert('This feature is planned for a future TripFiver consumer update.')));
