@@ -234,3 +234,7 @@
 /* TripFiver sidebar brand logo */
 .consumer-logo{padding:2px 8px 28px}
 .tripfiver-logo{display:block;width:100%;max-width:205px;height:auto;object-fit:contain;border-radius:12px}
+
+/* Larger TripFiver sidebar logo */
+.consumer-logo{padding:2px 4px 28px;justify-content:flex-start}
+.tripfiver-logo{width:100%;max-width:225px;height:72px;object-fit:contain;object-position:left center;transform:scale(1.18);transform-origin:left center}
