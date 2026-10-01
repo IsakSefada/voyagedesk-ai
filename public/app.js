@@ -257,7 +257,10 @@ async function loadViatorActivities(){
   if(!destinationId){msg.textContent='More Viator destinations are coming soon.';grid.innerHTML='';return;}
   msg.textContent='Finding recommended activities…';grid.innerHTML='';
   try{
-    const r=await fetch(`/api/viator/products?destinationId=${encodeURIComponent(destinationId)}&currency=USD&count=3`);
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),10000);
+    const r=await fetch(`/api/viator/products?destinationId=${encodeURIComponent(destinationId)}&currency=USD&count=3`,{signal:controller.signal});
+    clearTimeout(timeout);
     const data=await r.json();
     if(!r.ok)throw new Error(data.error||'Activities could not be loaded.');
     const products=Array.isArray(data.products)?data.products:[];
