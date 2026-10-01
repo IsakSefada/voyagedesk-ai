@@ -253,10 +253,12 @@ async function loadViatorActivities(){
   if(chips)chips.innerHTML='';
   if(all)all.innerHTML='';
   if(!destination){msg.textContent='Activities are unavailable for this trip.';grid.innerHTML='';return;}
-  const destinationId=destination.toLowerCase()==='istanbul'?585:null;
-  if(!destinationId){msg.textContent='More Viator destinations are coming soon.';grid.innerHTML='';return;}
   msg.textContent='Finding recommended activities…';grid.innerHTML='';
   try{
+    const destinationResponse=await fetch(`/api/viator/destination?name=${encodeURIComponent(destination)}`);
+    const destinationData=await destinationResponse.json();
+    if(!destinationResponse.ok||!destinationData?.destination?.destinationId)throw new Error('Viator destination unavailable.');
+    const destinationId=destinationData.destination.destinationId;
     const controller=new AbortController();
     const timeout=setTimeout(()=>controller.abort(),10000);
     const r=await fetch(`/api/viator/products?destinationId=${encodeURIComponent(destinationId)}&currency=USD&count=3`,{signal:controller.signal});
