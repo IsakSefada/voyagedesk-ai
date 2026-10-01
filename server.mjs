@@ -369,13 +369,16 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
     const name=(url.searchParams.get('name')||'').trim();
     if(!name)return send(res,400,{error:'Destination name is required.',provider:'Viator Sandbox'});
     try{
-      const data=await viatorSandboxGet('/destinations');
-      const destinations=Array.isArray(data)?data:(data.destinations||[]);
-      const wanted=name.toLocaleLowerCase('en-US');
-      const exact=destinations.find(d=>String(d.name||'').trim().toLocaleLowerCase('en-US')===wanted);
-      const partial=destinations.find(d=>String(d.name||'').trim().toLocaleLowerCase('en-US').includes(wanted));
-      const destination=exact||partial||null;
-      return send(res,destination?200:404,{provider:'Viator Sandbox',destination});
+      const destination=await resolveViatorDestination(name);
+      return send(res,destination?200:404,{provider:'Viator Sandbox',destination,cacheLoadedAt:viatorDestinationCache.loadedAt});
+    }catch(err){return send(res,503,{provider:'Viator Sandbox',error:err.message});}
+  }
+  if(url.pathname==='/api/viator/destinations/test'&&req.method==='GET'){
+    const names=(url.searchParams.get('names')||'Paris,Istanbul,Rome,Tokyo,Santorini').split(',').map(x=>x.trim()).filter(Boolean);
+    try{
+      const destinations=await viatorDestinationsCached();
+      const results=names.map(query=>{const d=matchViatorDestination(query,destinations);return {query,matched:!!d,destination:d?{destinationId:d.destinationId,name:d.name,type:d.type,iataCode:d.iataCode||'',parentDestinationId:d.parentDestinationId,lookupId:d.lookupId}:null};});
+      return send(res,200,{provider:'Viator Sandbox',cachedDestinations:destinations.length,cacheLoadedAt:viatorDestinationCache.loadedAt,results});
     }catch(err){return send(res,503,{provider:'Viator Sandbox',error:err.message});}
   }
   if(url.pathname==='/api/viator/tags'&&req.method==='GET'){
