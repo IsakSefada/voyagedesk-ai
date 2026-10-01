@@ -285,8 +285,8 @@ function renderTripHero(it){
   const title=$('#tripHeroTitle'),meta=$('#tripHeroMeta'),summary=$('#tripHeroSummary'),hero=$('#tripHero');
   if(title)title.textContent=`Your ${destination} Adventure`;
   const parts=[];
-  if(currentTrip?.startDate&&currentTrip?.endDate)parts.push(`${currentTrip.startDate} → ${currentTrip.endDate}`);
-  if(currentTrip?.travelers)parts.push(`${currentTrip.travelers} traveler${Number(currentTrip.travelers)===1?'':'s'}`);
+  if(currentTrip?.departureDate&&currentTrip?.returnDate)parts.push(`${currentTrip.departureDate} → ${currentTrip.returnDate}`);
+  if(currentTrip?.travelers)parts.push(currentTrip.travelers);
   if(it?.days?.length)parts.push(`${it.days.length}-day plan`);
   if(meta)meta.textContent=parts.join('  ·  ');
   if(summary)summary.textContent=it?.summary||'A personalized trip designed around you.';
