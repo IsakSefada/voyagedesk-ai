@@ -250,53 +250,31 @@ async function loadViatorActivities(){
   if(!grid||!msg||!currentTrip)return;
   const destination=String(currentTrip.destinations||'').split(',')[0].trim();
   if(title)title.textContent=destination?`Things to do in ${destination}`:'Things to do';
-  const categories=[
-    {label:'✨ For You',tag:null},
-    {label:'🚢 Cruises',tag:21729},
-    {label:'🏛 Sightseeing',tag:21725},
-    {label:'🌆 City Tours',tag:12075},
-    {label:'☀️ Day Trips',tag:11889},
-    {label:'🕐 Half-Day',tag:11929},
-    {label:'🌙 Sunset',tag:11963},
-    {label:'📜 Historical',tag:12029},
-    {label:'👤 Private Tours',tag:null,localFlag:'PRIVATE_TOUR'}
-  ];
-  if(chips)chips.innerHTML=categories.map((x,i)=>`<button type="button" class="viator-category-chip${i===0?' active':''}">${escapeHtml(x.label)}</button>`).join('');
+  if(chips)chips.innerHTML='';
+  if(all)all.innerHTML='';
   if(!destination){msg.textContent='Activities are unavailable for this trip.';grid.innerHTML='';return;}
-  grid.innerHTML='';if(all)all.innerHTML='';
-  let destinationId=destination.toLowerCase()==='istanbul'?585:null;
-  if(!destinationId){msg.textContent='Viator activities for this destination are coming soon.';return;}
-
-  const renderCards=products=>{
+  const destinationId=destination.toLowerCase()==='istanbul'?585:null;
+  if(!destinationId){msg.textContent='More Viator destinations are coming soon.';grid.innerHTML='';return;}
+  msg.textContent='Finding recommended activities…';grid.innerHTML='';
+  try{
+    const r=await fetch(`/api/viator/products?destinationId=${encodeURIComponent(destinationId)}&currency=USD&count=3`);
+    const data=await r.json();
+    if(!r.ok)throw new Error(data.error||'Activities could not be loaded.');
+    const products=Array.isArray(data.products)?data.products:[];
+    if(!products.length){msg.textContent='Recommended activities are unavailable right now.';return;}
     grid.innerHTML=products.slice(0,3).map(p=>{
       const image=(p.images||[]).find(i=>i.isCover)?.variants?.find(v=>v.width>=480)?.url||(p.images||[])[0]?.variants?.[0]?.url||'';
-      const rating=p.reviews?.combinedAverageRating, reviews=p.reviews?.totalReviews;
+      const rating=p.reviews?.combinedAverageRating,reviews=p.reviews?.totalReviews;
       const mins=p.duration?.fixedDurationInMinutes||p.duration?.variableDurationFromMinutes;
       const duration=mins?mins>=60?`${Math.round(mins/60*10)/10} hr`:`${mins} min`:'';
-      const price=p.pricing?.summary?.fromPrice, currency=p.pricing?.currency||'USD';
+      const price=p.pricing?.summary?.fromPrice,currency=p.pricing?.currency||'USD';
       return `<article class="viator-activity-card">${image?`<img src="${escapeHtml(image)}" alt="${escapeHtml(p.title||'Viator activity')}" loading="lazy">`:''}<div class="viator-activity-body"><h4>${escapeHtml(p.title||'Activity')}</h4><div class="viator-activity-meta">${rating?`★ ${escapeHtml(rating)}${reviews?` · ${escapeHtml(reviews)} reviews`:''}`:''}${duration?` · ⏱ ${escapeHtml(duration)}`:''}</div>${price!=null?`<strong>From ${escapeHtml(currency)} ${escapeHtml(price)}</strong>`:''}<a class="primary viator-book-btn" href="${escapeHtml(p.productUrl||'#')}" target="_blank" rel="noopener sponsored">View on Viator →</a></div></article>`;
     }).join('');
-  };
-  const loadCategory=async category=>{
-    msg.textContent='Finding bookable activities…';grid.innerHTML='';
-    try{
-      const count=category.localFlag?10:3;
-      let url=`/api/viator/products?destinationId=${encodeURIComponent(destinationId)}&currency=USD&count=${count}`;
-      if(category.tag)url+=`&tags=${encodeURIComponent(category.tag)}`;
-      const r=await fetch(url);
-      const data=await r.json();
-      if(!r.ok)throw new Error(data.error||'Activities could not be loaded.');
-      let products=Array.isArray(data.products)?data.products:[];
-      if(category.localFlag)products=products.filter(p=>Array.isArray(p.flags)&&p.flags.includes(category.localFlag));
-      if(!products.length){msg.textContent=`No ${category.label.replace(/^\S+\s*/,'').toLowerCase()} found right now. Try another category.`;return;}
-      renderCards(products);msg.textContent='';
-    }catch(err){msg.textContent='Activities could not be loaded right now.';grid.innerHTML='';}
-  };
-  if(chips)chips.querySelectorAll('.viator-category-chip').forEach((btn,i)=>btn.onclick=async()=>{
-    chips.querySelectorAll('.viator-category-chip').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
-    await loadCategory(categories[i]);
-  });
-  await loadCategory(categories[0]);
+    msg.textContent='Choose a recommendation below. You can continue browsing other experiences after opening Viator.';
+  }catch(err){
+    msg.textContent='Activities could not be loaded right now.';
+    grid.innerHTML='';
+  }
 }
 
 function renderTripHero(it){
