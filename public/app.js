@@ -252,7 +252,7 @@ async function loadViatorActivities(){
   if(title)title.textContent=destination?`Things to do in ${destination}`:'Things to do';
   const categories=[
     {label:'✨ For You',tag:null},
-    {label:'🚢 Cruises',tag:21701},
+    {label:'🚢 Cruises',tag:21729},
     {label:'🏛 Sightseeing',tag:21725},
     {label:'🌆 City Tours',tag:12075},
     {label:'☀️ Day Trips',tag:11889},
