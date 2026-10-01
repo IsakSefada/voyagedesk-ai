@@ -275,11 +275,14 @@ async function loadViatorActivities(){
       return `<article class="viator-activity-card">${image?`<img src="${escapeHtml(image)}" alt="${escapeHtml(p.title||'Viator activity')}" loading="lazy">`:''}<div class="viator-activity-body"><h4>${escapeHtml(p.title||'Activity')}</h4><div class="viator-activity-meta">${rating?`★ ${escapeHtml(rating)}${reviews?` · ${escapeHtml(reviews)} reviews`:''}`:''}${duration?` · ⏱ ${escapeHtml(duration)}`:''}</div>${price!=null?`<strong>From ${escapeHtml(currency)} ${escapeHtml(price)}</strong>`:''}<a class="primary viator-book-btn" href="${escapeHtml(p.productUrl||'#')}" target="_blank" rel="noopener sponsored">View on Viator →</a></div></article>`;
     }).join('');
     msg.textContent='';
-    const destinationUrl=destinationData.destination?.destinationUrl||'';
-    if(all&&destinationUrl)all.innerHTML=`<a class="secondary viator-all-btn" href="${escapeHtml(destinationUrl)}" target="_blank" rel="noopener sponsored">Explore all ${escapeHtml(destination)} experiences on Viator →</a>`;
+    // Keep customers on TripFiver until they choose a specific bookable product.
+    // Destination/category landing pages are intentionally not linked because they can
+    // lead to informational Viator pages instead of a direct shopping experience.
+    if(all)all.innerHTML='';
     if(chips)chips.querySelectorAll('.viator-category-chip').forEach((btn,i)=>btn.onclick=()=>{
       chips.querySelectorAll('.viator-category-chip').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
-      if(i>0&&destinationUrl)window.open(destinationUrl,'_blank','noopener');
+      if(i>0)msg.textContent='Bookable recommendations for this category are coming next. Choose one of the activities below to book now.';
+      else msg.textContent='';
     });
   }catch(err){msg.textContent='Activities could not be loaded right now.';grid.innerHTML='';}
 }
