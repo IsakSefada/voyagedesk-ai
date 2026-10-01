@@ -259,7 +259,7 @@ async function loadViatorActivities(){
     {label:'🕐 Half-Day',tag:11929},
     {label:'🌙 Sunset',tag:11963},
     {label:'📜 Historical',tag:12029},
-    {label:'👤 Private Tours',tag:null,flag:'PRIVATE_TOUR'}
+    {label:'👤 Private Tours',tag:null,localFlag:'PRIVATE_TOUR'}
   ];
   if(chips)chips.innerHTML=categories.map((x,i)=>`<button type="button" class="viator-category-chip${i===0?' active':''}">${escapeHtml(x.label)}</button>`).join('');
   if(!destination){msg.textContent='Activities are unavailable for this trip.';grid.innerHTML='';return;}
@@ -280,13 +280,14 @@ async function loadViatorActivities(){
   const loadCategory=async category=>{
     msg.textContent='Finding bookable activities…';grid.innerHTML='';
     try{
-      let url=`/api/viator/products?destinationId=${encodeURIComponent(destinationId)}&currency=USD&count=3`;
+      const count=category.localFlag?10:3;
+      let url=`/api/viator/products?destinationId=${encodeURIComponent(destinationId)}&currency=USD&count=${count}`;
       if(category.tag)url+=`&tags=${encodeURIComponent(category.tag)}`;
-      if(category.flag)url+=`&flag=${encodeURIComponent(category.flag)}`;
       const r=await fetch(url);
       const data=await r.json();
       if(!r.ok)throw new Error(data.error||'Activities could not be loaded.');
-      const products=Array.isArray(data.products)?data.products:[];
+      let products=Array.isArray(data.products)?data.products:[];
+      if(category.localFlag)products=products.filter(p=>Array.isArray(p.flags)&&p.flags.includes(category.localFlag));
       if(!products.length){msg.textContent=`No ${category.label.replace(/^\S+\s*/,'').toLowerCase()} found right now. Try another category.`;return;}
       renderCards(products);msg.textContent='';
     }catch(err){msg.textContent='Activities could not be loaded right now.';grid.innerHTML='';}
