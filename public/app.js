@@ -279,7 +279,7 @@ async function loadViatorActivities(){
     if(all&&destinationUrl)all.innerHTML=`<a class="secondary viator-all-btn" href="${escapeHtml(destinationUrl)}" target="_blank" rel="noopener sponsored">Explore all ${escapeHtml(destination)} experiences on Viator →</a>`;
     if(chips)chips.querySelectorAll('.viator-category-chip').forEach((btn,i)=>btn.onclick=()=>{
       chips.querySelectorAll('.viator-category-chip').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
-      if(i>0&&destinationUrl)window.open(destinationUrl,'_blank','noopener');
+      msg.textContent=i===0?'':'Category filtering will show bookable activities here once enabled.';
     });
   }catch(err){msg.textContent='Activities could not be loaded right now.';grid.innerHTML='';}
 }
