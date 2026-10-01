@@ -176,6 +176,29 @@ async function viatorSandboxGet(endpoint){
   return data;
 }
 
+async function viatorSandboxPost(endpoint,body){
+  const key=process.env.VIATOR_SANDBOX_API_KEY;
+  if(!key)throw new Error('Viator Sandbox is not connected.');
+  const r=await fetch(`${VIATOR_SANDBOX_BASE}${endpoint}`,{
+    method:'POST',
+    headers:{'exp-api-key':key,'Accept-Language':'en-US','Accept':'application/json;version=2.0','Content-Type':'application/json'},
+    body:JSON.stringify(body)
+  });
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(data?.message||data?.errorMessage||`Viator Sandbox request failed (${r.status})`);
+  return data;
+}
+
+async function viatorSandboxProducts(destinationId,currency='USD',count=6){
+  const data=await viatorSandboxPost('/products/search',{
+    filtering:{destination:String(destinationId)},
+    sorting:{sort:'TRAVELER_RATING',order:'DESCENDING'},
+    pagination:{start:1,count:Math.min(10,Math.max(1,Number(count)||6))},
+    currency:String(currency||'USD').toUpperCase()
+  });
+  return data;
+}
+
 const SUPABASE_URL=(process.env.SUPABASE_URL||'').trim().replace(/\/$/,'');
 const SUPABASE_KEY=(process.env.SUPABASE_PUBLISHABLE_KEY||process.env.SUPABASE_ANON_KEY||'').trim();
 const CLOUD_ENABLED=!!(SUPABASE_URL&&SUPABASE_KEY);
@@ -295,6 +318,14 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
   if(url.pathname==='/api/viator/test'&&req.method==='GET'){
     try{const data=await viatorSandboxGet('/destinations');const destinations=Array.isArray(data)?data:(data.destinations||[]);const istanbul=destinations.find(d=>String(d.name||'').toLowerCase()==='istanbul');return send(res,200,{provider:'Viator Sandbox',connected:true,destination:istanbul||null,totalDestinations:destinations.length});}
     catch(err){return send(res,503,{provider:'Viator Sandbox',connected:false,error:err.message});}
+  }
+  if(url.pathname==='/api/viator/products'&&req.method==='GET'){
+    const destinationId=(url.searchParams.get('destinationId')||'').trim();
+    if(!destinationId)return send(res,400,{error:'destinationId is required.',provider:'Viator Sandbox'});
+    try{
+      const data=await viatorSandboxProducts(destinationId,url.searchParams.get('currency')||'USD',url.searchParams.get('count')||6);
+      return send(res,200,{provider:'Viator Sandbox',destinationId,products:data.products||[],totalCount:data.totalCount??null});
+    }catch(err){return send(res,503,{provider:'Viator Sandbox',error:err.message});}
   }
   if(url.pathname==='/api/booking-links'&&req.method==='POST')return send(res,200,bookingLinks(await parseBody(req)));
   const match=url.pathname.match(/^\/api\/trips\/([^/]+)$/);
