@@ -310,7 +310,7 @@ $('#saveTrip').onclick=async()=>{syncProposalEdits();if(!currentTrip||!currentIt
 function getBrand(){try{return JSON.parse(localStorage.getItem('voyagedesk-brand')||'{}');}catch{return{};}}
 function setBrand(b){localStorage.setItem('voyagedesk-brand',JSON.stringify(b));applyBrand();loadBrandForm();}
 function applyBrand(){
-  const b=getBrand(),name=b.name||'TripFiver',advisor=b.advisor||'Travel Advisor',tagline=b.tagline||'Your journey. Our expertise.';
+  const b=getBrand(),name=b.name||'TripFiver',advisor='',tagline=b.tagline||'Plan smarter. Travel better.';
   $('#brandNamePrint').textContent=name;
   $('#brandContactPrint').textContent=[advisor,b.email,b.phone,b.website,b.address].filter(Boolean).join(' · ');
   if($('#sidebarAgencyName'))$('#sidebarAgencyName').textContent=name;if($('#sidebarAdvisor'))$('#sidebarAdvisor').textContent=advisor;if($('#sidebarTagline'))$('#sidebarTagline').textContent=tagline;
