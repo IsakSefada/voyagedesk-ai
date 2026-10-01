@@ -242,14 +242,14 @@
 
 /* v0.4 Viator activity cards */
 .viator-activities-panel{margin-top:16px}
-.viator-activities-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:14px}
-.viator-activity-card{overflow:hidden;border:1px solid var(--line);border-radius:15px;background:#fff;box-shadow:0 7px 20px rgba(20,44,84,.07)}
-.viator-activity-card>img{display:block;width:100%;height:180px;object-fit:cover}
-.viator-activity-body{padding:15px;display:grid;gap:10px}
+.viator-activities-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin-top:18px;align-items:stretch}
+.viator-activity-card{min-width:0;overflow:hidden;border:1px solid var(--line);border-radius:15px;background:#fff;box-shadow:0 7px 20px rgba(20,44,84,.07);display:flex;flex-direction:column}
+.viator-activity-card>img{display:block;width:100%;height:190px;object-fit:cover}
+.viator-activity-body{padding:16px;display:flex;flex:1;flex-direction:column;gap:11px}
 .viator-activity-body h4{margin:0;font-size:16px;line-height:1.35}
-.viator-activity-meta{font-size:12px;color:var(--muted)}
+.viator-activity-meta{font-size:12px;color:var(--muted);line-height:1.45}
 .viator-activity-body>strong{font-size:14px}
-.viator-book-btn{display:inline-block;text-align:center;text-decoration:none;padding:10px 12px}
-@media(max-width:900px){.viator-activities-grid{grid-template-columns:1fr}.viator-activity-card{display:grid;grid-template-columns:180px 1fr}.viator-activity-card>img{height:100%;min-height:170px}}
-@media(max-width:600px){.viator-activity-card{display:block}.viator-activity-card>img{height:190px}}
+.viator-book-btn{display:block;position:static!important;float:none!important;width:100%;box-sizing:border-box;margin-top:auto;text-align:center;text-decoration:none;padding:10px 12px}
+@media(max-width:900px){.viator-activities-grid{grid-template-columns:1fr;gap:20px}.viator-activity-card{display:grid;grid-template-columns:220px minmax(0,1fr)}.viator-activity-card>img{height:100%;min-height:190px}}
+@media(max-width:600px){.viator-activity-card{display:flex}.viator-activity-card>img{height:200px}}
 @media print{.viator-book-btn{display:none}}
