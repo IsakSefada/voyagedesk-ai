@@ -282,9 +282,10 @@ async function loadViatorActivities(){
     try{
       let url=`/api/viator/products?destinationId=${encodeURIComponent(destinationId)}&currency=USD&count=3`;
       if(category.tag)url+=`&tags=${encodeURIComponent(category.tag)}`;
-      const r=await fetch(url),data=await r.json();
+      const r=await fetch(url);
+      const data=await r.json();
       if(!r.ok)throw new Error(data.error||'Activities could not be loaded.');
-      let products=data.products||[];
+      const products=Array.isArray(data.products)?data.products:[];
       if(!products.length){msg.textContent=`No ${category.label.replace(/^\S+\s*/,'').toLowerCase()} found right now. Try another category.`;return;}
       renderCards(products);msg.textContent='';
     }catch(err){msg.textContent='Activities could not be loaded right now.';grid.innerHTML='';}
