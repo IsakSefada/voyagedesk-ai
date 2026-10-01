@@ -291,8 +291,20 @@ function renderTripHero(it){
   if(meta)meta.textContent=parts.join('  ·  ');
   if(summary)summary.textContent=it?.summary||'A personalized trip designed around you.';
   if(hero){
+    hero.style.backgroundImage='';
     const firstPhoto=(it?.days||[]).map(d=>d.photoUrl||d.imageUrl||d.photo).find(Boolean);
-    if(firstPhoto)hero.style.backgroundImage=`url("${String(firstPhoto).replaceAll('"','%22')}")`;
+    if(firstPhoto){
+      hero.style.backgroundImage=`url("${String(firstPhoto).replaceAll('"','%22')}")`;
+    }else{
+      fetch(`/api/photos/search?q=${encodeURIComponent(destination+' travel landmark')}&per_page=1`)
+        .then(r=>r.ok?r.json():Promise.reject(new Error('Hero photo unavailable')))
+        .then(data=>{
+          const photo=data?.photos?.[0];
+          const src=photo?.src||photo?.url||photo?.imageUrl;
+          if(src&&hero)hero.style.backgroundImage=`url("${String(src).replaceAll('"','%22')}")`;
+        })
+        .catch(()=>{});
+    }
   }
   document.querySelectorAll('#tripHero [data-trip-jump]').forEach(btn=>btn.onclick=()=>{
     const target=btn.dataset.tripJump==='expedia'?$('.expedia-booking-panel'):btn.dataset.tripJump==='viator'?$('#viatorActivities'):$('#days');
