@@ -238,3 +238,18 @@
 /* Larger TripFiver sidebar logo */
 .consumer-logo{padding:2px 4px 28px;justify-content:flex-start}
 .tripfiver-logo{width:100%;max-width:225px;height:72px;object-fit:contain;object-position:left center;transform:scale(1.18);transform-origin:left center}
+
+
+/* v0.4 Viator activity cards */
+.viator-activities-panel{margin-top:16px}
+.viator-activities-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:14px}
+.viator-activity-card{overflow:hidden;border:1px solid var(--line);border-radius:15px;background:#fff;box-shadow:0 7px 20px rgba(20,44,84,.07)}
+.viator-activity-card>img{display:block;width:100%;height:180px;object-fit:cover}
+.viator-activity-body{padding:15px;display:grid;gap:10px}
+.viator-activity-body h4{margin:0;font-size:16px;line-height:1.35}
+.viator-activity-meta{font-size:12px;color:var(--muted)}
+.viator-activity-body>strong{font-size:14px}
+.viator-book-btn{display:inline-block;text-align:center;text-decoration:none;padding:10px 12px}
+@media(max-width:900px){.viator-activities-grid{grid-template-columns:1fr}.viator-activity-card{display:grid;grid-template-columns:180px 1fr}.viator-activity-card>img{height:100%;min-height:170px}}
+@media(max-width:600px){.viator-activity-card{display:block}.viator-activity-card>img{height:190px}}
+@media print{.viator-book-btn{display:none}}
