@@ -285,10 +285,11 @@ async function loadViatorActivities(){
       if(!r.ok)throw new Error(data.error||'Activities could not be loaded.');
       let products=data.products||[];
       if(category.terms.length){
-        products=products.filter(p=>{
+        const matching=products.filter(p=>{
           const hay=`${p.title||''} ${p.description||''}`.toLowerCase();
           return category.terms.some(term=>hay.includes(term));
         });
+        if(matching.length)products=matching;
       }
       if(!products.length){msg.textContent=`No ${category.label.replace(/^\S+\s*/,'').toLowerCase()} found right now. Try another category.`;return;}
       renderCards(products);msg.textContent='';
