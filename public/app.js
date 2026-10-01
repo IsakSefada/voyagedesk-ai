@@ -259,7 +259,7 @@ async function loadViatorActivities(){
     {label:'🕐 Half-Day',tag:11929},
     {label:'🌙 Sunset',tag:11963},
     {label:'📜 Historical',tag:12029},
-    {label:'👤 Private Tours',tag:12050}
+    {label:'👤 Private Tours',tag:null,flag:'PRIVATE_TOUR'}
   ];
   if(chips)chips.innerHTML=categories.map((x,i)=>`<button type="button" class="viator-category-chip${i===0?' active':''}">${escapeHtml(x.label)}</button>`).join('');
   if(!destination){msg.textContent='Activities are unavailable for this trip.';grid.innerHTML='';return;}
@@ -282,6 +282,7 @@ async function loadViatorActivities(){
     try{
       let url=`/api/viator/products?destinationId=${encodeURIComponent(destinationId)}&currency=USD&count=3`;
       if(category.tag)url+=`&tags=${encodeURIComponent(category.tag)}`;
+      if(category.flag)url+=`&flag=${encodeURIComponent(category.flag)}`;
       const r=await fetch(url);
       const data=await r.json();
       if(!r.ok)throw new Error(data.error||'Activities could not be loaded.');
