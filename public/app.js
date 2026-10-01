@@ -251,15 +251,15 @@ async function loadViatorActivities(){
   const destination=String(currentTrip.destinations||'').split(',')[0].trim();
   if(title)title.textContent=destination?`Things to do in ${destination}`:'Things to do';
   const categories=[
-    {label:'✨ For You',terms:[]},
-    {label:'🚢 Cruises',terms:['cruise','sailing','boat']},
-    {label:'🏛 Sightseeing',terms:['sightseeing','landmark','attraction']},
-    {label:'🌆 City Tours',terms:['city tour','city tours']},
-    {label:'☀️ Day Trips',terms:['day trip','full-day']},
-    {label:'🕐 Half-Day',terms:['half-day','half day']},
-    {label:'🌙 Sunset',terms:['sunset']},
-    {label:'📜 Historical',terms:['historical','history','historic']},
-    {label:'👤 Private Tours',terms:['private tour','private tours']}
+    {label:'✨ For You',tag:null},
+    {label:'🚢 Cruises',tag:21701},
+    {label:'🏛 Sightseeing',tag:21725},
+    {label:'🌆 City Tours',tag:12075},
+    {label:'☀️ Day Trips',tag:11889},
+    {label:'🕐 Half-Day',tag:11929},
+    {label:'🌙 Sunset',tag:11963},
+    {label:'📜 Historical',tag:12029},
+    {label:'👤 Private Tours',tag:12050}
   ];
   if(chips)chips.innerHTML=categories.map((x,i)=>`<button type="button" class="viator-category-chip${i===0?' active':''}">${escapeHtml(x.label)}</button>`).join('');
   if(!destination){msg.textContent='Activities are unavailable for this trip.';grid.innerHTML='';return;}
@@ -280,17 +280,11 @@ async function loadViatorActivities(){
   const loadCategory=async category=>{
     msg.textContent='Finding bookable activities…';grid.innerHTML='';
     try{
-      let url=`/api/viator/products?destinationId=${encodeURIComponent(destinationId)}&currency=USD&count=${category.terms.length?10:3}`;
+      let url=`/api/viator/products?destinationId=${encodeURIComponent(destinationId)}&currency=USD&count=3`;
+      if(category.tag)url+=`&tags=${encodeURIComponent(category.tag)}`;
       const r=await fetch(url),data=await r.json();
       if(!r.ok)throw new Error(data.error||'Activities could not be loaded.');
       let products=data.products||[];
-      if(category.terms.length){
-        const matching=products.filter(p=>{
-          const hay=`${p.title||''} ${p.description||''}`.toLowerCase();
-          return category.terms.some(term=>hay.includes(term));
-        });
-        if(matching.length)products=matching;
-      }
       if(!products.length){msg.textContent=`No ${category.label.replace(/^\S+\s*/,'').toLowerCase()} found right now. Try another category.`;return;}
       renderCards(products);msg.textContent='';
     }catch(err){msg.textContent='Activities could not be loaded right now.';grid.innerHTML='';}
