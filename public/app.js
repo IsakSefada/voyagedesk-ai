@@ -298,7 +298,7 @@ function renderTripHero(it){
     const firstPhoto=(it?.days||[]).map(d=>d.photoUrl||d.imageUrl||d.photo).find(Boolean);
     if(firstPhoto)hero.style.backgroundImage=`url("${String(firstPhoto).replaceAll('"','%22')}")`;
   }
-  $('#tripHero [data-trip-jump]').forEach(btn=>btn.onclick=()=>{
+  document.querySelectorAll('#tripHero [data-trip-jump]').forEach(btn=>btn.onclick=()=>{
     const target=btn.dataset.tripJump==='expedia'?$('.expedia-booking-panel'):btn.dataset.tripJump==='viator'?$('#viatorActivities'):$('#days');
     target?.scrollIntoView({behavior:'smooth',block:'start'});
   });
