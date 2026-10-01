@@ -206,6 +206,45 @@ async function viatorSandboxTags(){
   return Array.isArray(data)?data:(data.tags||[]);
 }
 
+const VIATOR_DESTINATION_CACHE_TTL_MS=7*24*60*60*1000;
+let viatorDestinationCache={loadedAt:0,destinations:[]};
+
+function normalizeDestinationName(value){
+  return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
+}
+
+async function viatorDestinationsCached(force=false){
+  const fresh=viatorDestinationCache.destinations.length&&Date.now()-viatorDestinationCache.loadedAt<VIATOR_DESTINATION_CACHE_TTL_MS;
+  if(!force&&fresh)return viatorDestinationCache.destinations;
+  const data=await viatorSandboxGet('/destinations');
+  const destinations=Array.isArray(data)?data:(data.destinations||[]);
+  viatorDestinationCache={loadedAt:Date.now(),destinations};
+  return destinations;
+}
+
+function matchViatorDestination(query,destinations){
+  const raw=String(query||'').trim();
+  const name=normalizeDestinationName(raw.split(',')[0]);
+  const iata=raw.toUpperCase().match(/\b[A-Z]{3}\b/)?.[0]||'';
+  if(!name&&!iata)return null;
+  const typeRank={CITY:0,TOWN:1,ISLAND:2,REGION:3,PROVINCE:4,STATE:5,COUNTRY:6};
+  const scored=destinations.map(d=>{
+    const dn=normalizeDestinationName(d.name);
+    let score=100;
+    if(name&&dn===name)score=0;
+    else if(iata&&String(d.iataCode||'').toUpperCase()===iata)score=1;
+    else if(name&&dn.startsWith(name))score=2;
+    else if(name&&dn.includes(name))score=3;
+    else return null;
+    return {d,score,type:typeRank[String(d.type||'').toUpperCase()]??20};
+  }).filter(Boolean).sort((a,b)=>a.score-b.score||a.type-b.type);
+  return scored[0]?.d||null;
+}
+
+async function resolveViatorDestination(query){
+  return matchViatorDestination(query,await viatorDestinationsCached());
+}
+
 const SUPABASE_URL=(process.env.SUPABASE_URL||'').trim().replace(/\/$/,'');
 const SUPABASE_KEY=(process.env.SUPABASE_PUBLISHABLE_KEY||process.env.SUPABASE_ANON_KEY||'').trim();
 const CLOUD_ENABLED=!!(SUPABASE_URL&&SUPABASE_KEY);
