@@ -189,14 +189,21 @@ async function viatorSandboxPost(endpoint,body){
   return data;
 }
 
-async function viatorSandboxProducts(destinationId,currency='USD',count=6){
+async function viatorSandboxProducts(destinationId,currency='USD',count=6,tags=[]){
+  const filtering={destination:String(destinationId)};
+  if(Array.isArray(tags)&&tags.length)filtering.tags=tags.map(Number).filter(Number.isFinite);
   const data=await viatorSandboxPost('/products/search',{
-    filtering:{destination:String(destinationId)},
+    filtering,
     sorting:{sort:'TRAVELER_RATING',order:'DESCENDING'},
     pagination:{start:1,count:Math.min(10,Math.max(1,Number(count)||6))},
     currency:String(currency||'USD').toUpperCase()
   });
   return data;
+}
+
+async function viatorSandboxTags(){
+  const data=await viatorSandboxGet('/products/tags');
+  return Array.isArray(data)?data:(data.tags||[]);
 }
 
 const SUPABASE_URL=(process.env.SUPABASE_URL||'').trim().replace(/\/$/,'');
@@ -319,11 +326,16 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
     try{const data=await viatorSandboxGet('/destinations');const destinations=Array.isArray(data)?data:(data.destinations||[]);const istanbul=destinations.find(d=>String(d.name||'').toLowerCase()==='istanbul');return send(res,200,{provider:'Viator Sandbox',connected:true,destination:istanbul||null,totalDestinations:destinations.length});}
     catch(err){return send(res,503,{provider:'Viator Sandbox',connected:false,error:err.message});}
   }
+  if(url.pathname==='/api/viator/tags'&&req.method==='GET'){
+    try{return send(res,200,{provider:'Viator Sandbox',tags:await viatorSandboxTags()});}
+    catch(err){return send(res,503,{provider:'Viator Sandbox',error:err.message});}
+  }
   if(url.pathname==='/api/viator/products'&&req.method==='GET'){
     const destinationId=(url.searchParams.get('destinationId')||'').trim();
     if(!destinationId)return send(res,400,{error:'destinationId is required.',provider:'Viator Sandbox'});
     try{
-      const data=await viatorSandboxProducts(destinationId,url.searchParams.get('currency')||'USD',url.searchParams.get('count')||6);
+      const tags=(url.searchParams.get('tags')||'').split(',').map(x=>x.trim()).filter(Boolean);
+      const data=await viatorSandboxProducts(destinationId,url.searchParams.get('currency')||'USD',url.searchParams.get('count')||6,tags);
       return send(res,200,{provider:'Viator Sandbox',destinationId,products:data.products||[],totalCount:data.totalCount??null});
     }catch(err){return send(res,503,{provider:'Viator Sandbox',error:err.message});}
   }
