@@ -276,3 +276,20 @@
 .trip-hero-btn:hover{transform:translateY(-1px);background:#fff}
 @media(max-width:700px){.trip-result-hero{min-height:430px}.trip-hero-content{padding:42px 24px}.trip-hero-content h2{font-size:34px}.trip-hero-btn{flex:1 1 45%}}
 @media print{.trip-result-hero{min-height:250px;box-shadow:none}.trip-hero-content{padding:32px}.trip-hero-actions{display:none}}
+
+
+/* Compact consumer itinerary */
+.compact-day{padding:0;overflow:hidden}
+.compact-day>summary{list-style:none;cursor:pointer;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.compact-day>summary::-webkit-details-marker{display:none}
+.compact-day-heading{min-width:0}
+.compact-day-heading h3{margin:4px 0 8px}
+.day-highlights{display:flex;flex-wrap:wrap;gap:7px}
+.day-highlights span{font-size:12px;background:#f3f6fb;border:1px solid #e2e8f0;border-radius:999px;padding:5px 9px;color:#475569}
+.day-expand{white-space:nowrap;font-size:13px;font-weight:700;color:#4657ff}
+.compact-day[open] .day-expand{font-size:0}
+.compact-day[open] .day-expand:after{content:'Hide details ▴';font-size:13px}
+.day-details{padding:0 20px 20px;border-top:1px solid #eef2f7}
+.compact-day:not([open]) .proposal-photo{display:none}
+@media(max-width:700px){.compact-day>summary{align-items:flex-start;flex-direction:column;gap:10px}.day-expand{align-self:flex-end}}
+@media print{.compact-day>summary{padding:10px 14px}.compact-day .day-details{display:none!important}.compact-day{break-inside:avoid}.day-highlights span{padding:3px 6px}}
