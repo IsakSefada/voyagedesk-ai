@@ -255,11 +255,10 @@ async function loadViatorActivities(){
   if(!destination){msg.textContent='Activities are unavailable for this trip.';grid.innerHTML='';return;}
   msg.textContent='Finding activities for your trip…';grid.innerHTML='';if(all)all.innerHTML='';
   try{
-    const destinationsResponse=await fetch('/api/viator/test');
-    if(!destinationsResponse.ok)throw new Error('Viator is unavailable.');
-    const destinationData=await destinationsResponse.json();
-    let destinationId=String(destinationData.destination?.name||'').toLowerCase()===destination.toLowerCase()?destinationData.destination.destinationId:null;
-    if(!destinationId&&destination.toLowerCase()==='istanbul')destinationId=585;
+    // Istanbul is our current verified Viator sandbox destination.
+    // Use its known destination ID directly so product cards do not depend on a second
+    // /destinations request before the already-working product search can run.
+    let destinationId=destination.toLowerCase()==='istanbul'?585:null;
     if(!destinationId){msg.textContent='Viator activities for this destination are coming soon.';return;}
     const r=await fetch(`/api/viator/products?destinationId=${encodeURIComponent(destinationId)}&currency=USD&count=3`);
     const data=await r.json();
@@ -275,8 +274,7 @@ async function loadViatorActivities(){
       return `<article class="viator-activity-card">${image?`<img src="${escapeHtml(image)}" alt="${escapeHtml(p.title||'Viator activity')}" loading="lazy">`:''}<div class="viator-activity-body"><h4>${escapeHtml(p.title||'Activity')}</h4><div class="viator-activity-meta">${rating?`★ ${escapeHtml(rating)}${reviews?` · ${escapeHtml(reviews)} reviews`:''}`:''}${duration?` · ⏱ ${escapeHtml(duration)}`:''}</div>${price!=null?`<strong>From ${escapeHtml(currency)} ${escapeHtml(price)}</strong>`:''}<a class="primary viator-book-btn" href="${escapeHtml(p.productUrl||'#')}" target="_blank" rel="noopener sponsored">View on Viator →</a></div></article>`;
     }).join('');
     msg.textContent='';
-    const destinationUrl=destinationData.destination?.destinationUrl||'';
-    if(all&&destinationUrl)all.innerHTML=`<a class="secondary viator-all-btn" href="${escapeHtml(destinationUrl)}" target="_blank" rel="noopener sponsored">Explore all ${escapeHtml(destination)} experiences on Viator →</a>`;
+    if(all)all.innerHTML='';
     if(chips)chips.querySelectorAll('.viator-category-chip').forEach((btn,i)=>btn.onclick=()=>{
       chips.querySelectorAll('.viator-category-chip').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
       msg.textContent=i===0?'':'Category filtering will show bookable activities here once enabled.';
