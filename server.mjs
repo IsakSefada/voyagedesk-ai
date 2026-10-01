@@ -189,10 +189,9 @@ async function viatorSandboxPost(endpoint,body){
   return data;
 }
 
-async function viatorSandboxProducts(destinationId,currency='USD',count=6,tags=[],flag=''){
+async function viatorSandboxProducts(destinationId,currency='USD',count=6,tags=[]){
   const filtering={destination:String(destinationId)};
   if(Array.isArray(tags)&&tags.length)filtering.tags=tags.map(Number).filter(Number.isFinite);
-  if(flag)filtering.flags=[String(flag)];
   const data=await viatorSandboxPost('/products/search',{
     filtering,
     sorting:{sort:'TRAVELER_RATING',order:'DESCENDING'},
@@ -336,7 +335,7 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
     if(!destinationId)return send(res,400,{error:'destinationId is required.',provider:'Viator Sandbox'});
     try{
       const tags=(url.searchParams.get('tags')||'').split(',').map(x=>x.trim()).filter(Boolean);
-      const data=await viatorSandboxProducts(destinationId,url.searchParams.get('currency')||'USD',url.searchParams.get('count')||6,tags,url.searchParams.get('flag')||'');
+      const data=await viatorSandboxProducts(destinationId,url.searchParams.get('currency')||'USD',url.searchParams.get('count')||6,tags);
       return send(res,200,{provider:'Viator Sandbox',destinationId,products:data.products||[],totalCount:data.totalCount??null});
     }catch(err){return send(res,503,{provider:'Viator Sandbox',error:err.message});}
   }
