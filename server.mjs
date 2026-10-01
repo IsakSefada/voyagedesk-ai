@@ -326,6 +326,19 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
     try{const data=await viatorSandboxGet('/destinations');const destinations=Array.isArray(data)?data:(data.destinations||[]);const istanbul=destinations.find(d=>String(d.name||'').toLowerCase()==='istanbul');return send(res,200,{provider:'Viator Sandbox',connected:true,destination:istanbul||null,totalDestinations:destinations.length});}
     catch(err){return send(res,503,{provider:'Viator Sandbox',connected:false,error:err.message});}
   }
+  if(url.pathname==='/api/viator/destination'&&req.method==='GET'){
+    const name=(url.searchParams.get('name')||'').trim();
+    if(!name)return send(res,400,{error:'Destination name is required.',provider:'Viator Sandbox'});
+    try{
+      const data=await viatorSandboxGet('/destinations');
+      const destinations=Array.isArray(data)?data:(data.destinations||[]);
+      const wanted=name.toLocaleLowerCase('en-US');
+      const exact=destinations.find(d=>String(d.name||'').trim().toLocaleLowerCase('en-US')===wanted);
+      const partial=destinations.find(d=>String(d.name||'').trim().toLocaleLowerCase('en-US').includes(wanted));
+      const destination=exact||partial||null;
+      return send(res,destination?200:404,{provider:'Viator Sandbox',destination});
+    }catch(err){return send(res,503,{provider:'Viator Sandbox',error:err.message});}
+  }
   if(url.pathname==='/api/viator/tags'&&req.method==='GET'){
     try{return send(res,200,{provider:'Viator Sandbox',tags:await viatorSandboxTags()});}
     catch(err){return send(res,503,{provider:'Viator Sandbox',error:err.message});}
