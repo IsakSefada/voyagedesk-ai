@@ -230,3 +230,15 @@
   .trip-progress{width:calc(100vw - 28px);padding:26px 22px}
   .trip-progress strong{font-size:18px}
 }
+
+/* v0.4 consumer concise itinerary */
+.consumer-day{padding:0;overflow:hidden}
+.consumer-day>summary{list-style:none;display:flex;justify-content:space-between;gap:22px;align-items:center;padding:20px 22px;cursor:pointer}
+.consumer-day>summary::-webkit-details-marker{display:none}
+.consumer-day-main{min-width:0;flex:1}.consumer-day h3{font-size:19px;margin:3px 0 10px}
+.day-highlights{display:flex;flex-wrap:wrap;gap:7px}.day-highlights span{background:#f1f4f9;border:1px solid #e2e7ef;border-radius:999px;padding:6px 10px;font-size:12px;color:#46546a}
+.day-restaurant{margin-top:10px;font-size:12px;color:#53617a;font-weight:700}
+.day-toggle{flex:0 0 auto;color:var(--accent);font-size:12px;font-weight:850;white-space:nowrap}
+.day-details{padding:0 22px 22px;border-top:1px solid #edf0f4}.consumer-day:not([open]) .day-details{display:none}
+@media(max-width:680px){.consumer-day>summary{align-items:flex-start;padding:17px;gap:10px}.consumer-day h3{font-size:17px}.day-details{padding:0 17px 17px}.day-highlights span{font-size:11px}}
+@media print{.consumer-day{break-inside:avoid;margin:7px 0}.consumer-day>summary{padding:10px 12px}.consumer-day .day-details,.consumer-day .day-toggle{display:none!important}.consumer-day h3{font-size:15px;margin:2px 0 6px}.day-highlights span{padding:3px 7px;font-size:9px}.day-restaurant{font-size:9px;margin-top:5px}}
