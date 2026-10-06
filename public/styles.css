@@ -242,3 +242,88 @@
 .day-details{padding:0 22px 22px;border-top:1px solid #edf0f4}.consumer-day:not([open]) .day-details{display:none}
 @media(max-width:680px){.consumer-day>summary{align-items:flex-start;padding:17px;gap:10px}.consumer-day h3{font-size:17px}.day-details{padding:0 17px 17px}.day-highlights span{font-size:11px}}
 @media print{.consumer-day{break-inside:avoid;margin:7px 0}.consumer-day>summary{padding:10px 12px}.consumer-day .day-details,.consumer-day .day-toggle{display:none!important}.consumer-day h3{font-size:15px;margin:2px 0 6px}.day-highlights span{padding:3px 7px;font-size:9px}.day-restaurant{font-size:9px;margin-top:5px}}
+
+
+/* v0.4 mobile responsive repair — phone layout only */
+@media(max-width:700px){
+  html,body{width:100%;max-width:100%;overflow-x:hidden}
+  body{font-size:16px}
+  .app-shell{display:block;min-width:0;width:100%}
+
+  /* Replace desktop sidebar with a compact mobile navigation bar. */
+  .sidebar.consumer-sidebar{position:relative;top:auto;width:100%;height:auto;min-height:0;padding:12px 14px;background:#08172f;display:block;overflow:hidden}
+  .consumer-logo{padding:0 2px 10px;gap:9px}
+  .consumer-logo-mark{width:38px;height:38px;font-size:18px}
+  .consumer-logo strong{font-size:17px}.consumer-logo small{font-size:10px}
+  .consumer-sidebar nav{display:flex;gap:7px;overflow-x:auto;padding:2px 0 4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .consumer-sidebar nav::-webkit-scrollbar{display:none}
+  .consumer-sidebar .nav{display:flex;align-items:center;justify-content:center;flex:0 0 auto;min-width:48px;padding:10px 12px;border-radius:10px;white-space:nowrap}
+  .consumer-sidebar .nav span{display:inline;margin-left:6px;font-size:12px}
+  .consumer-sidebar .nav:not(.active) span{display:none}
+  .sidebar-explore,.cloud-account,.side-note{display:none!important}
+
+  main{width:100%;max-width:none;min-width:0;margin:0;padding:20px 14px 48px}
+  header{display:block;margin-bottom:18px;min-width:0}
+  header h1{font-size:30px;line-height:1.08;margin:5px 0 14px;overflow-wrap:anywhere}
+  .header-actions{display:grid;grid-template-columns:1fr;gap:8px;width:100%}
+  .header-actions .primary,.header-actions .secondary{width:100%;min-width:0;padding:12px 10px}
+  .storage-badge{display:none}
+
+  .consumer-home{width:100%;max-width:100%;min-width:0}
+  .consumer-hero{display:block;width:100%;min-width:0;min-height:0;border-radius:20px}
+  .consumer-hero-copy{padding:28px 20px 30px;min-width:0}
+  .hero-kicker{font-size:10px;letter-spacing:.08em}
+  .consumer-hero h2{font-size:36px;line-height:1.05;margin:12px 0}
+  .consumer-hero p{font-size:16px;line-height:1.5;max-width:100%;overflow-wrap:anywhere}
+  .consumer-hero-art{display:none}
+  .hero-features{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:20px}
+  .hero-features span{min-width:0;padding:9px 10px;font-size:11px;text-align:center}
+
+  .quick-planner{width:100%;max-width:100%;min-width:0;margin:16px 0 28px;border-radius:16px;overflow:hidden}
+  .quick-tabs{display:flex;width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .quick-tabs>*{flex:0 0 auto;padding:13px 15px;font-size:12px;white-space:nowrap}
+  .quick-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:13px;padding:18px}
+  .quick-grid label,.quick-grid input,.quick-grid button{width:100%;max-width:100%;min-width:0}
+  .quick-grid input{height:48px}
+  .quick-cta{height:auto;min-height:50px;white-space:normal}
+
+  .home-section-head{gap:10px;align-items:flex-end;margin:26px 2px 12px}
+  .home-section-head h3{font-size:24px;line-height:1.15}
+  .home-section-head .text-btn{font-size:11px;padding:7px 0;text-align:right}
+  .destination-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
+  .destination-card{width:100%;min-width:0;height:150px;border-radius:14px}
+  .destination-card span{left:12px;bottom:11px;font-size:17px}
+
+  .how-grid{display:grid;grid-template-columns:1fr;gap:10px;width:100%}
+  .how-grid>div{grid-template-columns:42px minmax(0,1fr);padding:16px;min-width:0}
+  .how-grid strong{font-size:16px;line-height:1.25;overflow-wrap:anywhere}
+  .how-grid small{font-size:13px;overflow-wrap:anywhere}
+  .stats,.consumer-stats{grid-template-columns:1fr!important;width:100%}
+  .panel,.stat{max-width:100%;min-width:0}
+
+  /* Full planner, proposal and controls */
+  .consumer-trip-form{width:100%;max-width:100%;min-width:0}
+  .planner-intro,.planner-step,.planner-submit{padding-left:18px;padding-right:18px}
+  .planner-intro h2{font-size:28px;line-height:1.12}
+  .grid.two,.proposal-grid{grid-template-columns:1fr!important}
+  input,select,textarea{max-width:100%;min-width:0}
+  .planner-submit{display:grid;grid-template-columns:1fr;gap:9px}
+  .planner-submit .primary,.planner-submit .secondary{width:100%}
+  .photo-option{align-items:flex-start;gap:12px}
+  .proposal-toolbar,.panel-head{align-items:flex-start;flex-direction:column;gap:12px}
+  .proposal-actions{display:grid!important;grid-template-columns:1fr!important;width:100%}
+  .proposal-actions select,.proposal-actions button{width:100%!important;min-width:0}
+  .booking-panel,.proposal-cover,.day-card{max-width:100%;min-width:0;overflow:hidden}
+  .trip-tools{flex-direction:column}.trip-tools select{min-width:0;width:100%}
+  .trip-table-wrap,.client-table-wrap{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+}
+
+/* Extra protection for very narrow phones. */
+@media(max-width:390px){
+  main{padding-left:10px;padding-right:10px}
+  .consumer-hero h2{font-size:32px}
+  .hero-features{grid-template-columns:1fr}
+  .destination-grid{grid-template-columns:1fr}
+  .destination-card{height:175px}
+  .consumer-sidebar .nav{padding:9px 10px}
+}
