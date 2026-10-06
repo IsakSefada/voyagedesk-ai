@@ -64,12 +64,41 @@ async function restaurantCandidatesForTrip(trip){
   catch(err){console.warn('Google Places itinerary enrichment skipped:',err.message);return [];}
 }
 
-async function callOpenAI(trip){
+function itineraryTerms(itinerary){
+  const stop=new Set(['the','and','for','with','from','into','your','this','that','day','istanbul','arrival','departure','restaurant','lunch','dinner','hotel','walk','visit','explore','area']);
+  const text=(itinerary?.days||[]).flatMap(d=>[d.location,d.title,...(d.morning||[]),...(d.afternoon||[]),...(d.evening||[])]).join(' ').toLowerCase();
+  return new Set((text.match(/[a-zÀ-žİıŞşĞğÜüÖöÇç]{4,}/g)||[]).filter(w=>!stop.has(w)));
+}
+function regenerationOverlap(previousItinerary,itinerary){
+  if(!previousItinerary||!itinerary)return 0;
+  const a=itineraryTerms(previousItinerary),b=itineraryTerms(itinerary);
+  if(!a.size||!b.size)return 0;
+  let common=0;for(const x of a)if(b.has(x))common++;
+  return common/Math.min(a.size,b.size);
+}
+function diversityRepairPrompt(trip,restaurantCandidates,draft,overlap){
+  return buildPrompt({...trip,previousItinerary:trip.previousItinerary})+
+    `\n\nSERVER DIVERSITY CHECK FAILED: The first regenerated draft still overlaps too heavily with the previous itinerary (similarity score ${Math.round(overlap*100)}%). Rewrite the itinerary one time before returning it. Preserve only true must-see anchors or experiences explicitly requested by the traveler. Replace optional repeated districts, markets, museums, waterfront zones, and local-life experiences with equally strong destination-appropriate alternatives. For trips with 5+ sightseeing days, aim for at least 3 full sightseeing days whose principal geography and main experiences were absent from the previous itinerary when the destination supports this. Do not simply reorder, split, merge, or rename prior days. Keep the restaurant geographic-fit rules.\n\nREJECTED FIRST DRAFT:\n${JSON.stringify(draft,null,2)}`;
+}
+async function requestItinerary(prompt,mode='fast'){
   const key=process.env.OPENAI_API_KEY;if(!key)throw new Error('OPENAI_API_KEY is not set.');
-  const response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model:MODEL,input:buildPrompt(trip,await restaurantCandidatesForTrip(trip)),...apiTuning(trip.generationMode)})});
+  const response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model:MODEL,input:prompt,...apiTuning(mode)})});
   const data=await response.json();if(!response.ok)throw new Error(data?.error?.message||'OpenAI request failed');
   const text=extractOutputText(data);if(!text)throw new Error('No itinerary text returned.');
   return parseJsonText(text);
+}
+async function enforceRegenerationDiversity(trip,restaurantCandidates,itinerary){
+  if(!trip.previousItinerary)return itinerary;
+  const overlap=regenerationOverlap(trip.previousItinerary,itinerary);
+  if(overlap<=0.58)return itinerary;
+  console.log(`TripFiver diversity retry: overlap ${Math.round(overlap*100)}%`);
+  return await requestItinerary(diversityRepairPrompt(trip,restaurantCandidates,itinerary,overlap),trip.generationMode||'fast');
+}
+
+async function callOpenAI(trip){
+  const restaurantCandidates=await restaurantCandidatesForTrip(trip);
+  const itinerary=await requestItinerary(buildPrompt(trip,restaurantCandidates),trip.generationMode||'fast');
+  return await enforceRegenerationDiversity(trip,restaurantCandidates,itinerary);
 }
 async function translateItinerary(itinerary, language){
   const key=process.env.OPENAI_API_KEY;if(!key)throw new Error('OPENAI_API_KEY is not set.');
@@ -266,7 +295,7 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
   if(url.pathname==='/api/clients'&&req.method==='POST'){if(!CLOUD_ENABLED)return send(res,503,{error:'Clients require cloud mode. Configure Supabase first.'});try{return send(res,201,await cloudCreateClient(req,await parseBody(req)));}catch(err){return send(res,400,{error:err.message});}}
   if(url.pathname==='/api/agency-profile'&&req.method==='GET'){if(!CLOUD_ENABLED)return send(res,200,{local:true});try{return send(res,200,await cloudProfile(req));}catch(err){return send(res,401,{error:err.message});}}
   if(url.pathname==='/api/agency-profile'&&req.method==='PUT'){if(!CLOUD_ENABLED)return send(res,200,{local:true,...await parseBody(req)});try{return send(res,200,await cloudSaveProfile(req,await parseBody(req)));}catch(err){return send(res,400,{error:err.message});}}
-  if(url.pathname==='/api/generate-stream'&&req.method==='POST'){const body=await parseBody(req);res.writeHead(200,{'Content-Type':'application/x-ndjson; charset=utf-8','Cache-Control':'no-store','Transfer-Encoding':'chunked'});try{const restaurantCandidates=await restaurantCandidatesForTrip(body);await streamOpenAIJson(res,{prompt:buildPrompt(body,restaurantCandidates),mode:body.generationMode||'fast',donePayload:itinerary=>({mode:'ai',itinerary})});}catch(err){const itinerary=demoItinerary(body);itinerary.demoReason=err.message;res.write(JSON.stringify({type:'done',mode:'demo',itinerary})+'\n');}return res.end();}
+  if(url.pathname==='/api/generate-stream'&&req.method==='POST'){const body=await parseBody(req);res.writeHead(200,{'Content-Type':'application/x-ndjson; charset=utf-8','Cache-Control':'no-store','Transfer-Encoding':'chunked'});try{const restaurantCandidates=await restaurantCandidatesForTrip(body);const itinerary=await requestItinerary(buildPrompt(body,restaurantCandidates),body.generationMode||'fast');const finalItinerary=await enforceRegenerationDiversity(body,restaurantCandidates,itinerary);res.write(JSON.stringify({type:'done',mode:'ai',itinerary:finalItinerary})+'\n');}catch(err){const itinerary=demoItinerary(body);itinerary.demoReason=err.message;res.write(JSON.stringify({type:'done',mode:'demo',itinerary})+'\n');}return res.end();}
   if(url.pathname==='/api/translate-stream'&&req.method==='POST'){const body=await parseBody(req);res.writeHead(200,{'Content-Type':'application/x-ndjson; charset=utf-8','Cache-Control':'no-store','Transfer-Encoding':'chunked'});try{if(!body.language)throw new Error('Choose a translation language.');const prompt=`Translate the travel proposal JSON below into ${body.language}. Preserve the exact JSON structure, array structure, numbers, airport/IATA codes, currency codes, URLs, brand names, and proper nouns when they should not be translated. Translate client-facing prose naturally and concisely. Preserve Anglo-American number formatting: comma thousands separators and period decimals. Return ONLY valid JSON, no markdown.\n\n${JSON.stringify(body.itinerary)}`;await streamOpenAIJson(res,{prompt,mode:'fast',donePayload:itinerary=>({itinerary,language:body.language})});}catch(err){res.write(JSON.stringify({type:'error',error:err.message||'Translation failed'})+'\n');}return res.end();}
   if(url.pathname==='/api/generate'&&req.method==='POST'){const body=await parseBody(req);let itinerary,mode='ai';try{itinerary=await callOpenAI(body);}catch(err){mode='demo';itinerary=demoItinerary(body);itinerary.demoReason=err.message;}return send(res,200,{mode,itinerary});}
   if(url.pathname==='/api/translate'&&req.method==='POST'){const body=await parseBody(req);try{return send(res,200,{itinerary:await translateItinerary(body.itinerary,body.language),language:body.language});}catch(err){return send(res,400,{error:err.message||'Translation failed'});}}
