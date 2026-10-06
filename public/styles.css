@@ -370,3 +370,31 @@
     margin:18px 18px 18px 0;
   }
 }
+
+
+/* v0.4 mobile hero order refinement — image before headline */
+@media(max-width:700px){
+  .consumer-hero-art{
+    order:1;
+    margin:18px 18px 0;
+    min-height:220px;
+  }
+  .consumer-hero-copy{
+    order:2;
+    padding-top:24px;
+  }
+}
+@media(min-width:540px) and (max-width:700px){
+  .consumer-hero{
+    grid-template-columns:minmax(0,1fr);
+  }
+  .consumer-hero-art{
+    order:1;
+    min-height:250px;
+    margin:18px 18px 0;
+  }
+  .consumer-hero-copy{
+    order:2;
+    padding:24px 20px 30px;
+  }
+}
