@@ -327,3 +327,46 @@
   .destination-card{height:175px}
   .consumer-sidebar .nav{padding:9px 10px}
 }
+
+
+/* v0.4 mobile hero photography — keep the Istanbul image beside the headline */
+@media(max-width:700px){
+  .consumer-hero{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    gap:0;
+  }
+  .consumer-hero-copy{order:1}
+  .consumer-hero-art{
+    order:2;
+    display:block!important;
+    width:auto;
+    min-height:220px;
+    margin:0 18px 20px;
+    border-radius:16px;
+    background-image:linear-gradient(90deg,rgba(6,31,69,.03),rgba(6,31,69,.02)),url("./istanbul-hero.JPG");
+    background-size:cover;
+    background-position:center center;
+    overflow:hidden;
+  }
+  .consumer-hero-art .hero-art-label{
+    display:block;
+    right:12px;
+    bottom:12px;
+    max-width:calc(100% - 24px);
+    font-size:11px;
+    padding:8px 10px;
+  }
+}
+@media(min-width:540px) and (max-width:700px){
+  .consumer-hero{
+    grid-template-columns:minmax(0,1fr) minmax(0,.9fr);
+    align-items:stretch;
+  }
+  .consumer-hero-copy{order:1;padding-right:16px}
+  .consumer-hero-art{
+    order:2;
+    min-height:100%;
+    margin:18px 18px 18px 0;
+  }
+}
