@@ -122,6 +122,62 @@ async function viatorActivities(destination,{count=10,currency}={}){
     }))
   };
 }
+function viatorActivityText(product){
+  return [product?.title,product?.description,(product?.flags||[]).join(' ')].filter(Boolean).join(' ').toLowerCase();
+}
+function travelerActivityProfile(trip={}){
+  const interests=Array.isArray(trip.interests)?trip.interests.join(' '):String(trip.interests||'');
+  const text=[interests,trip.notes,trip.specialRequests,trip.dietaryNeeds,trip.hotelStyle,trip.travelers].filter(Boolean).join(' ').toLowerCase();
+  const themes={
+    food:/food|culinary|cuisine|restaurant|cooking|taste|wine|coffee|market/.test(text),
+    culture:/culture|cultural|history|historic|museum|architecture|religious|art/.test(text),
+    local:/local|neighborhood|neighbourhood|hidden|authentic|market/.test(text),
+    photography:/photo|photography|instagram|picture/.test(text),
+    private:/private|luxury|exclusive|romantic|couple|honeymoon/.test(text),
+    family:/family|child|children|kid|kids/.test(text),
+    outdoors:/nature|outdoor|hike|hiking|boat|cruise|water|adventure/.test(text)
+  };
+  return {text,themes};
+}
+function scoreViatorProduct(product,trip={}){
+  const profile=travelerActivityProfile(trip),text=viatorActivityText(product);
+  let score=0;const reasons=[];
+  const tests=[
+    ['food',/food|culinary|cuisine|cooking|taste|breakfast|lunch|dinner|market/,18,'food and dining interests'],
+    ['culture',/culture|history|historic|museum|mosque|church|palace|architecture|art/,15,'culture and history interests'],
+    ['local',/local|hidden|neighborhood|neighbourhood|backstreet|market|authentic/,14,'local-neighborhood interests'],
+    ['photography',/photo|photography|photoshoot|instagram/,18,'photography interests'],
+    ['private',/private|exclusive|personal/,10,'private/personal travel style'],
+    ['family',/family|child|children|kid/,12,'family travel'],
+    ['outdoors',/nature|outdoor|hike|boat|cruise|water|adventure/,14,'outdoor/adventure interests']
+  ];
+  for(const [theme,re,points,label] of tests)if(profile.themes[theme]&&re.test(text)){score+=points;reasons.push(label);}
+  const rating=Number(product?.reviews?.combinedAverageRating||0),reviews=Number(product?.reviews?.totalReviews||0);
+  if(rating>=4.8){score+=8;reasons.push('strong traveler rating');}else if(rating>=4.5)score+=5;
+  if(reviews>=100)score+=5;else if(reviews>=25)score+=3;
+  if((product?.flags||[]).includes('FREE_CANCELLATION'))score+=3;
+  if((product?.flags||[]).includes('PRIVATE_TOUR')&&profile.themes.private)score+=3;
+  return {score,reasons:[...new Set(reasons)].slice(0,3)};
+}
+function rankViatorActivities(products,trip={},limit=5){
+  return (products||[]).map(product=>({...product,match:scoreViatorProduct(product,trip)}))
+    .sort((a,b)=>b.match.score-a.match.score||Number(b.reviews?.combinedAverageRating||0)-Number(a.reviews?.combinedAverageRating||0)||Number(b.reviews?.totalReviews||0)-Number(a.reviews?.totalReviews||0))
+    .slice(0,Math.min(10,Math.max(1,Number(limit)||5)));
+}
+async function personalizedViatorActivities(trip={},limit=5){
+  const destination=String(trip.destinations||trip.destination||'').split(/[;,\n]/)[0].trim();
+  if(!destination)throw new Error('Destination is required.');
+  const resolved=await resolveViatorDestination(destination);
+  if(!resolved.match)throw new Error('No Viator destination match found.');
+  const pool=await viatorActivities(resolved.match,{count:20,currency:trip.currency||resolved.match.defaultCurrencyCode});
+  return {
+    resolvedDestination:resolved.match,
+    travelerProfile:travelerActivityProfile(trip).themes,
+    candidateCount:pool.count,
+    recommendations:rankViatorActivities(pool.products,trip,limit)
+  };
+}
+
 
 
 const mime = {'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml'};
@@ -416,6 +472,13 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
       if(!resolved.match)return send(res,404,{error:'No Viator destination match found.',provider:'Viator',query});
       const results=await viatorActivities(resolved.match,{count:url.searchParams.get('limit')||10,currency:url.searchParams.get('currency')||resolved.match.defaultCurrencyCode});
       return send(res,200,{provider:'Viator',query,resolvedDestination:resolved.match,...results});
+    }catch(err){return send(res,503,{error:err.message,provider:'Viator'});}
+  }
+  if(url.pathname==='/api/viator/recommendations'&&req.method==='POST'){
+    const body=await parseBody(req);
+    try{
+      const result=await personalizedViatorActivities(body,body.limit||5);
+      return send(res,200,{provider:'Viator',...result});
     }catch(err){return send(res,503,{error:err.message,provider:'Viator'});}
   }
   if(url.pathname==='/api/booking-links'&&req.method==='POST')return send(res,200,bookingLinks(await parseBody(req)));
