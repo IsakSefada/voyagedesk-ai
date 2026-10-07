@@ -540,3 +540,28 @@
     box-sizing:border-box!important;
   }
 }
+
+
+/* Mobile quick planner: make Departure/Return match Leaving from/Going to */
+@media(max-width:700px){
+  .quick-grid{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:12px!important;
+  }
+  .quick-grid>label,
+  .quick-grid>.field,
+  .quick-grid>div{
+    grid-column:1/-1!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+  }
+  .quick-grid input[type="date"]{
+    -webkit-appearance:none;
+    appearance:none;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+  }
+}
