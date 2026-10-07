@@ -44,7 +44,7 @@ function normalizeDestinationName(value){
   return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 }
 async function viatorFetch(endpoint,{method='GET',body}={}){
-  const key=(process.env.VIATOR_API_KEY||'').trim();
+  const key=(process.env.VIATOR_SANDBOX_API_KEY||process.env.VIATOR_API_KEY||'').trim();
   if(!key)throw new Error('VIATOR_API_KEY is not configured.');
   const r=await fetch(`${VIATOR_BASE}${endpoint}`,{
     method,
@@ -324,7 +324,7 @@ function bookingLinks(q){
 }
 
 const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`http://${req.headers.host}`);
-  if(url.pathname==='/api/status'&&req.method==='GET')return send(res,200,{openai:!!process.env.OPENAI_API_KEY,amadeus:!!(process.env.AMADEUS_API_KEY&&process.env.AMADEUS_API_SECRET),amadeusEnv:process.env.AMADEUS_ENV||'test',pexels:!!process.env.PEXELS_API_KEY,googlePlaces:!!process.env.GOOGLE_PLACES_API_KEY,viator:!!process.env.VIATOR_API_KEY,viatorEnv:process.env.VIATOR_ENV||'sandbox',supabase:CLOUD_ENABLED,storageMode:CLOUD_ENABLED?'cloud':'local'});
+  if(url.pathname==='/api/status'&&req.method==='GET')return send(res,200,{openai:!!process.env.OPENAI_API_KEY,amadeus:!!(process.env.AMADEUS_API_KEY&&process.env.AMADEUS_API_SECRET),amadeusEnv:process.env.AMADEUS_ENV||'test',pexels:!!process.env.PEXELS_API_KEY,googlePlaces:!!process.env.GOOGLE_PLACES_API_KEY,viator:!!(process.env.VIATOR_SANDBOX_API_KEY||process.env.VIATOR_API_KEY),viatorEnv:process.env.VIATOR_ENV||'sandbox',supabase:CLOUD_ENABLED,storageMode:CLOUD_ENABLED?'cloud':'local'});
   if(url.pathname==='/api/auth/signup'&&req.method==='POST'){if(!CLOUD_ENABLED)return send(res,503,{error:'Cloud login is not configured yet.'});const body=await parseBody(req);try{const {data}=await supaFetch('/auth/v1/signup',{method:'POST',body:{email:body.email,password:body.password,data:{full_name:body.name||''}}});return send(res,200,data);}catch(err){return send(res,400,{error:err.message});}}
   if(url.pathname==='/api/auth/login'&&req.method==='POST'){if(!CLOUD_ENABLED)return send(res,503,{error:'Cloud login is not configured yet.'});const body=await parseBody(req);try{const {data}=await supaFetch('/auth/v1/token?grant_type=password',{method:'POST',body:{email:body.email,password:body.password}});return send(res,200,data);}catch(err){return send(res,400,{error:err.message});}}
   if(url.pathname==='/api/auth/recover'&&req.method==='POST'){
