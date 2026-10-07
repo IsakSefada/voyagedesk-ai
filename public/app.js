@@ -291,6 +291,13 @@ function trackViatorClick(el){
   trackConversion('viator_click',{productCode:payload.productCode,day:payload.day,source:payload.source});
 }
 function bindViatorClickTracking(){document.querySelectorAll('[data-viator-click]').forEach(el=>{if(el.dataset.trackingBound)return;el.dataset.trackingBound='1';el.addEventListener('click',()=>trackViatorClick(el));});}
+function bindExpediaConversionTracking(){
+  const widget=$('#expediaAffiliateWidget');if(!widget||widget.dataset.trackingBound)return;
+  widget.dataset.trackingBound='1';
+  // Expedia's Creator widget renders partner-controlled UI. Track engagement
+  // at the TripFiver widget boundary without changing affiliate attribution.
+  widget.addEventListener('pointerdown',()=>trackConversion('expedia_widget_click',{source:'expedia-book-your-trip'}),{capture:true});
+}
 async function fetchJsonWithTimeout(url,options={},timeoutMs=12000){
   const controller=new AbortController();
   const timer=setTimeout(()=>controller.abort(),timeoutMs);
@@ -349,7 +356,7 @@ function renderProposal(it){
   document.querySelectorAll('.consumer-day').forEach(card=>card.addEventListener('toggle',()=>{const t=card.querySelector('.day-toggle');if(t)t.textContent=card.open?'Hide day ▴':'View day ▾';}));
   $('#verifyList').innerHTML=listHtml(it.verifyBeforeSending);
   $('#questionsList').innerHTML=listHtml(it.followUpQuestions);
-  applyBrand();$('#proposal').classList.remove('hidden');bindPhotoControls();
+  applyBrand();$('#proposal').classList.remove('hidden');bindPhotoControls();bindExpediaConversionTracking();
   // Fast-first render: the itinerary is complete at this point. Secondary
   // enrichment must never delay or block the traveler from using it.
   requestAnimationFrame(()=>{
