@@ -106,6 +106,12 @@ async function resolveViatorDestination(query){
     taxonomyCachedAt:new Date(viatorDestinationCache.loadedAt).toISOString()
   };
 }
+async function viatorProductDetails(productCode){
+  const code=encodeURIComponent(String(productCode||'').trim());
+  if(!code)return null;
+  try{return await viatorFetch('/products/'+code);}
+  catch(err){console.warn('[TripFiver Viator] product detail lookup failed',productCode,err.message);return null;}
+}
 async function viatorActivities(destination,{count=10,currency,start=1}={}){
   const destinationId=Number(destination?.destinationId);
   if(!destinationId)throw new Error('A valid Viator destination ID is required.');
@@ -604,6 +610,14 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
       if(!result.match)return send(res,404,{error:'No Viator destination match found.',...result});
       return send(res,200,{provider:'Viator',...result});
     }catch(err){return send(res,503,{error:err.message,provider:'Viator'});}
+  }
+  if(url.pathname==='/api/viator/product-link'&&req.method==='GET'){
+    const productCode=String(url.searchParams.get('productCode')||'').trim();
+    if(!productCode)return send(res,400,{error:'productCode is required.'});
+    const detail=await viatorProductDetails(productCode);
+    if(!detail||String(detail.status||'ACTIVE').toUpperCase()==='INACTIVE')return send(res,404,{error:'Viator product is not available.'});
+    if(!detail.productUrl)return send(res,404,{error:'Viator did not return a product booking URL.'});
+    return send(res,200,{productCode:detail.productCode||productCode,productUrl:detail.productUrl,status:detail.status||'ACTIVE'});
   }
   if(url.pathname==='/api/viator/activities'&&req.method==='GET'){
     const query=(url.searchParams.get('destination')||url.searchParams.get('query')||'').trim();
