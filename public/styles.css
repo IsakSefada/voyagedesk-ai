@@ -648,3 +648,13 @@
     padding:0!important;
   }
 }
+
+/* Stage 6 affiliate conversion dashboard */
+.conversion-dashboard{max-width:1100px;margin:0 auto}
+.conversion-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:18px 0}
+.conversion-stats>div{border:1px solid #e5e7eb;border-radius:14px;padding:18px;background:#fff}
+.conversion-stats small{display:block;color:#64748b;margin-bottom:8px}
+.conversion-stats strong{font-size:28px;line-height:1}
+.conversion-table-wrap{overflow-x:auto;margin:8px 0 14px}
+@media(max-width:700px){.conversion-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.conversion-dashboard{width:100%;max-width:100%;box-sizing:border-box}}
+@media(max-width:390px){.conversion-stats{grid-template-columns:1fr}}
