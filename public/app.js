@@ -290,7 +290,24 @@ function trackViatorClick(el){
   const body=JSON.stringify(payload);try{navigator.sendBeacon('/api/viator/click',new Blob([body],{type:'application/json'}));}catch{fetch('/api/viator/click',{method:'POST',headers:{'Content-Type':'application/json'},body,keepalive:true}).catch(()=>{});}
   trackConversion('viator_click',{productCode:payload.productCode,day:payload.day,source:payload.source});
 }
-function bindViatorClickTracking(){document.querySelectorAll('[data-viator-click]').forEach(el=>{if(el.dataset.trackingBound)return;el.dataset.trackingBound='1';el.addEventListener('click',()=>trackViatorClick(el));});}
+async function openVerifiedViatorProduct(el,event){
+  event.preventDefault();
+  const productCode=el.dataset.productCode||'';
+  if(!productCode)return;
+  const originalText=el.textContent;
+  el.textContent='Opening…';
+  try{
+    const d=await fetchJsonWithTimeout('/api/viator/product-link?productCode='+encodeURIComponent(productCode),{},8000);
+    if(!d.productUrl)throw new Error('No product URL returned');
+    trackViatorClick(el);
+    window.open(d.productUrl,'_blank','noopener');
+  }catch(err){
+    console.warn('[TripFiver Viator] verified product link unavailable',productCode,err);
+    el.textContent='Link unavailable — try again';
+    setTimeout(()=>{el.textContent=originalText;},2500);
+  }
+}
+function bindViatorClickTracking(){document.querySelectorAll('[data-viator-click]').forEach(el=>{if(el.dataset.trackingBound)return;el.dataset.trackingBound='1';el.addEventListener('click',e=>openVerifiedViatorProduct(el,e));});}
 function bindExpediaConversionTracking(){
   const widget=$('#expediaAffiliateWidget');if(!widget||widget.dataset.trackingBound)return;
   widget.dataset.trackingBound='1';
