@@ -427,3 +427,70 @@
 .day-experience-card strong{display:block;font-size:14px;line-height:1.3;margin-bottom:5px}
 .day-experience-link{display:inline-block;margin-top:7px;font-size:12px;font-weight:800;color:#4f46e5;text-decoration:none}
 @media(max-width:500px){.day-experience-card{grid-template-columns:84px minmax(0,1fr)}.day-experience-card img{width:84px;height:72px}}
+
+
+/* v0.4 mobile release hardening — full TripFiver proposal experience */
+@media(max-width:700px){
+  html,body{width:100%;max-width:100%;overflow-x:hidden}
+  body{min-width:0}
+  .app-shell{display:block!important;width:100%;min-width:0}
+  .consumer-sidebar{position:relative!important;top:auto!important;width:100%!important;height:auto!important;min-height:0!important;padding:12px 14px!important}
+  .consumer-logo{padding:0 4px 10px!important}
+  .consumer-logo-mark{width:36px;height:36px}
+  .consumer-sidebar nav{display:flex!important;gap:6px!important;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+  .consumer-sidebar nav::-webkit-scrollbar{display:none}
+  .consumer-sidebar .nav{flex:0 0 auto;padding:9px 11px!important;font-size:13px}
+  .consumer-sidebar .nav-coming,.sidebar-explore,.consumer-sidebar>.muted,.consumer-sidebar hr{display:none!important}
+  main{width:100%!important;max-width:100%!important;min-width:0!important;padding:14px 12px 30px!important}
+  .topbar{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap}
+  .topbar h1{font-size:28px}
+  .header-actions{width:100%;display:flex;flex-wrap:wrap}
+  .header-actions>*{max-width:100%}
+  .card,.consumer-trip-form,#proposal,.proposal-card,.consumer-home{max-width:100%!important;min-width:0}
+  .consumer-hero{border-radius:18px;min-height:0}
+  .consumer-hero-copy{padding:22px 18px 26px!important}
+  .consumer-hero h2{font-size:34px;overflow-wrap:anywhere}
+  .consumer-hero p{font-size:15px}
+  .hero-features{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .quick-planner{margin:16px 0 24px!important;border-radius:16px}
+  .quick-tabs{max-width:100%}
+  .quick-grid{padding:14px!important}
+  .destination-grid{gap:10px}
+  .planner-intro,.planner-step,.planner-submit{padding-left:16px!important;padding-right:16px!important}
+  .planner-intro h2{font-size:27px}
+  .planner-step .grid,.planner-advanced .grid{grid-template-columns:1fr!important}
+  input,select,textarea,button{max-width:100%;min-width:0}
+  .proposal-actions{display:flex!important;flex-wrap:wrap!important;gap:8px!important}
+  .proposal-actions>*{flex:1 1 140px}
+  .consumer-day{max-width:100%;overflow:hidden}
+  .consumer-day summary{gap:8px;align-items:flex-start}
+  .day-preview{max-width:100%;overflow:hidden}
+  .day-preview span{white-space:normal!important;overflow-wrap:anywhere}
+  .day-detail-grid{grid-template-columns:1fr!important}
+  .day-detail-grid>*{min-width:0}
+  .restaurant-picks,.advisor-note{overflow-wrap:anywhere}
+  .proposal-photo img,.day-photo img{max-width:100%;height:auto}
+  #viatorExperiences{max-width:100%;overflow:hidden}
+  .experience-grid{grid-template-columns:1fr!important}
+  .experience-grid .experience-card{display:grid!important}
+  .experience-card{max-width:100%}
+  .experience-body h4,.experience-why{overflow-wrap:anywhere}
+  .day-experience-card{max-width:100%}
+}
+@media(max-width:430px){
+  .consumer-logo small{display:none}
+  .consumer-sidebar .nav{font-size:12px;padding:8px 9px!important}
+  main{padding-left:10px!important;padding-right:10px!important}
+  .consumer-hero-art{min-height:190px!important;margin:10px 10px 0!important}
+  .consumer-hero-copy{padding:18px 14px 22px!important}
+  .consumer-hero h2{font-size:30px}
+  .hero-features{grid-template-columns:1fr}
+  .destination-grid{grid-template-columns:1fr!important}
+  .destination-card{height:190px}
+  .planner-submit{display:grid!important;grid-template-columns:1fr}
+  .planner-submit button{width:100%}
+  .experience-card{display:block!important}
+  .experience-card>img{width:100%;height:185px;min-height:0}
+  .day-experience-card{grid-template-columns:76px minmax(0,1fr)}
+  .day-experience-card img{width:76px;height:68px}
+}
