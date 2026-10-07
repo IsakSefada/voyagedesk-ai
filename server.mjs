@@ -70,7 +70,20 @@ async function viatorDestinations({force=false}={}){
 function rankViatorDestination(query,d){
   const q=normalizeDestinationName(query),name=normalizeDestinationName(d?.name);
   if(!q||!name)return -1;
-  let score=name===q?100:name.startsWith(q)?85:q.startsWith(name)?75:name.includes(q)?65:q.includes(name)?55:-1;
+  // Destination resolution must not use fuzzy substring matches. They caused
+  // "newyork" to resolve to York, UK. Accept only exact normalized city/town
+  // names, with a small alias set for common joined/spaced spellings.
+  const aliases=new Map([
+    ['newyork','new york'],
+    ['newyorkcity','new york city'],
+    ['nyc','new york city']
+  ]);
+  const canonical=s=>aliases.get(s)||s;
+  const cq=canonical(q),cn=canonical(name);
+  let score=cn===cq?100:-1;
+  // Viator may label the destination "New York City" while travelers enter
+  // "New York"; treat that pair as an exact geographic alias.
+  if(score<0&&((cq==='new york'&&cn==='new york city')||(cq==='new york city'&&cn==='new york')))score=98;
   if(score<0)return score;
   const type=String(d?.type||'').toUpperCase();
   if(type==='CITY')score+=8;
