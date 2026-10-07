@@ -2,6 +2,13 @@ const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 let currentTrip=null,currentItinerary=null,cloudEnabled=false,currentUser=null,clientsCache=[];
 let viatorRecommendationHistory=[];
 let viatorHistoryTripKey='';
+const VIATOR_HISTORY_KEY='tripfiver-viator-history-v1';
+function loadViatorHistory(tripKey){
+  try{const saved=JSON.parse(sessionStorage.getItem(VIATOR_HISTORY_KEY)||'{}');return Array.isArray(saved[tripKey])?saved[tripKey].map(String).slice(-60):[];}catch{return[];}
+}
+function saveViatorHistory(tripKey,codes){
+  try{const saved=JSON.parse(sessionStorage.getItem(VIATOR_HISTORY_KEY)||'{}');saved[tripKey]=[...new Set(codes.map(String))].slice(-60);sessionStorage.setItem(VIATOR_HISTORY_KEY,JSON.stringify(saved));}catch{}
+}
 const nativeFetch=window.fetch.bind(window);
 const SESSION_KEY='voyagedesk-session-v03';
 function getSession(){try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null');}catch{return null;}}
@@ -255,6 +262,7 @@ function renderViatorExperiences(data){
   window.tripFiverViatorData=data;
   const shown=(data?.recommendations||[]).map(x=>String(x.productCode||'')).filter(Boolean);
   viatorRecommendationHistory=[...new Set([...viatorRecommendationHistory,...shown])].slice(-60);
+  if(viatorHistoryTripKey)saveViatorHistory(viatorHistoryTripKey,viatorRecommendationHistory);
   const host=$('#viatorExperiences');if(!host)return;
   const items=(data?.recommendations||[]).slice(0,3);
   if(!items.length){host.classList.add('hidden');host.innerHTML='';return;}
@@ -279,7 +287,7 @@ function bindViatorClickTracking(){document.querySelectorAll('[data-viator-click
 async function loadViatorExperiences(){
   const host=$('#viatorExperiences');if(!host||!currentTrip)return;
   const tripKey=[currentTrip.destinations||'',currentTrip.startDate||'',currentTrip.endDate||'',currentTrip.interests||''].join('|').toLowerCase();
-  if(viatorHistoryTripKey!==tripKey){viatorHistoryTripKey=tripKey;viatorRecommendationHistory=[];window.tripFiverViatorData=null;}
+  if(viatorHistoryTripKey!==tripKey){viatorHistoryTripKey=tripKey;viatorRecommendationHistory=loadViatorHistory(tripKey);window.tripFiverViatorData=null;}
   host.classList.remove('hidden');host.innerHTML='<div class="experience-loading">Finding personalized experiences for your trip…</div>';
   try{const r=await fetch('/api/viator/recommendations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...currentTrip,itinerary:currentItinerary,excludeViatorProductCodes:viatorRecommendationHistory,limit:3})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Activity search failed');renderViatorExperiences(d);}catch{host.classList.add('hidden');host.innerHTML='';}
 }
