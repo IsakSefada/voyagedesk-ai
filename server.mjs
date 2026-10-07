@@ -35,6 +35,63 @@ const MODEL = process.env.OPENAI_MODEL || 'gpt-5.5';
 const AMADEUS_BASE = process.env.AMADEUS_ENV === 'production' ? 'https://api.amadeus.com' : 'https://test.api.amadeus.com';
 const PEXELS_BASE = 'https://api.pexels.com/v1';
 const GOOGLE_PLACES_BASE = 'https://places.googleapis.com/v1';
+const VIATOR_BASE = process.env.VIATOR_ENV === 'production' ? 'https://api.viator.com/partner' : 'https://api.sandbox.viator.com/partner';
+const VIATOR_LANGUAGE = process.env.VIATOR_LANGUAGE || 'en-US';
+let viatorDestinationCache={items:[],loadedAt:0};
+const VIATOR_DESTINATION_TTL=7*24*60*60*1000;
+
+function normalizeDestinationName(value){
+  return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+}
+async function viatorFetch(endpoint,{method='GET',body}={}){
+  const key=(process.env.VIATOR_API_KEY||'').trim();
+  if(!key)throw new Error('VIATOR_API_KEY is not configured.');
+  const r=await fetch(`${VIATOR_BASE}${endpoint}`,{
+    method,
+    headers:{
+      'exp-api-key':key,
+      'Accept':'application/json;version=2.0',
+      'Accept-Language':VIATOR_LANGUAGE,
+      ...(body===undefined?{}:{'Content-Type':'application/json'})
+    },
+    body:body===undefined?undefined:JSON.stringify(body)
+  });
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(data?.message||data?.error?.message||`Viator request failed (${r.status})`);
+  return data;
+}
+async function viatorDestinations({force=false}={}){
+  if(!force&&viatorDestinationCache.items.length&&Date.now()-viatorDestinationCache.loadedAt<VIATOR_DESTINATION_TTL)return viatorDestinationCache.items;
+  const data=await viatorFetch('/destinations');
+  const items=Array.isArray(data?.destinations)?data.destinations:Array.isArray(data)?data:[];
+  viatorDestinationCache={items,loadedAt:Date.now()};
+  return items;
+}
+function rankViatorDestination(query,d){
+  const q=normalizeDestinationName(query),name=normalizeDestinationName(d?.name);
+  if(!q||!name)return -1;
+  let score=name===q?100:name.startsWith(q)?85:q.startsWith(name)?75:name.includes(q)?65:q.includes(name)?55:-1;
+  if(score<0)return score;
+  const type=String(d?.type||'').toUpperCase();
+  if(type==='CITY')score+=8;
+  else if(type==='TOWN')score+=5;
+  else if(type==='COUNTRY')score-=3;
+  return score;
+}
+async function resolveViatorDestination(query){
+  const raw=String(query||'').trim();
+  if(!raw)throw new Error('Destination is required.');
+  const primary=raw.split(/[;,\n]/)[0].trim();
+  const items=await viatorDestinations();
+  const matches=items.map(d=>({d,score:rankViatorDestination(primary,d)})).filter(x=>x.score>=0).sort((a,b)=>b.score-a.score||String(a.d.name).localeCompare(String(b.d.name))).slice(0,8);
+  return {
+    query:primary,
+    match:matches[0]?.d||null,
+    alternatives:matches.slice(1).map(x=>x.d),
+    source:'Viator destination taxonomy',
+    taxonomyCachedAt:new Date(viatorDestinationCache.loadedAt).toISOString()
+  };
+}
 
 const mime = {'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml'};
 async function readTrips(){ try{return JSON.parse(await readFile(dataFile,'utf8'));}catch{return [];} }
@@ -267,7 +324,7 @@ function bookingLinks(q){
 }
 
 const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`http://${req.headers.host}`);
-  if(url.pathname==='/api/status'&&req.method==='GET')return send(res,200,{openai:!!process.env.OPENAI_API_KEY,amadeus:!!(process.env.AMADEUS_API_KEY&&process.env.AMADEUS_API_SECRET),amadeusEnv:process.env.AMADEUS_ENV||'test',pexels:!!process.env.PEXELS_API_KEY,googlePlaces:!!process.env.GOOGLE_PLACES_API_KEY,supabase:CLOUD_ENABLED,storageMode:CLOUD_ENABLED?'cloud':'local'});
+  if(url.pathname==='/api/status'&&req.method==='GET')return send(res,200,{openai:!!process.env.OPENAI_API_KEY,amadeus:!!(process.env.AMADEUS_API_KEY&&process.env.AMADEUS_API_SECRET),amadeusEnv:process.env.AMADEUS_ENV||'test',pexels:!!process.env.PEXELS_API_KEY,googlePlaces:!!process.env.GOOGLE_PLACES_API_KEY,viator:!!process.env.VIATOR_API_KEY,viatorEnv:process.env.VIATOR_ENV||'sandbox',supabase:CLOUD_ENABLED,storageMode:CLOUD_ENABLED?'cloud':'local'});
   if(url.pathname==='/api/auth/signup'&&req.method==='POST'){if(!CLOUD_ENABLED)return send(res,503,{error:'Cloud login is not configured yet.'});const body=await parseBody(req);try{const {data}=await supaFetch('/auth/v1/signup',{method:'POST',body:{email:body.email,password:body.password,data:{full_name:body.name||''}}});return send(res,200,data);}catch(err){return send(res,400,{error:err.message});}}
   if(url.pathname==='/api/auth/login'&&req.method==='POST'){if(!CLOUD_ENABLED)return send(res,503,{error:'Cloud login is not configured yet.'});const body=await parseBody(req);try{const {data}=await supaFetch('/auth/v1/token?grant_type=password',{method:'POST',body:{email:body.email,password:body.password}});return send(res,200,data);}catch(err){return send(res,400,{error:err.message});}}
   if(url.pathname==='/api/auth/recover'&&req.method==='POST'){
@@ -310,6 +367,15 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
     const query=[cuisine,'restaurants',area?`in ${area}`:'',`in ${destination}`].filter(Boolean).join(' ');
     try{return send(res,200,{provider:'Google Places',query,results:await googlePlacesTextSearch(query,url.searchParams.get('limit')||10)});}
     catch(err){return send(res,503,{error:err.message,provider:'Google Places'});}
+  }
+  if(url.pathname==='/api/viator/destinations'&&req.method==='GET'){
+    const query=(url.searchParams.get('query')||url.searchParams.get('destination')||'').trim();
+    if(!query)return send(res,400,{error:'Destination is required.'});
+    try{
+      const result=await resolveViatorDestination(query);
+      if(!result.match)return send(res,404,{error:'No Viator destination match found.',...result});
+      return send(res,200,{provider:'Viator',...result});
+    }catch(err){return send(res,503,{error:err.message,provider:'Viator'});}
   }
   if(url.pathname==='/api/booking-links'&&req.method==='POST')return send(res,200,bookingLinks(await parseBody(req)));
   const match=url.pathname.match(/^\/api\/trips\/([^/]+)$/);
