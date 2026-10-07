@@ -327,7 +327,13 @@ async function loadConversionDashboard(){
     if($('#conversionDestinations'))$('#conversionDestinations').innerHTML=rows||'<tr><td colspan="4">No conversion activity tracked yet.</td></tr>';
   }catch(err){if($('#conversionDestinations'))$('#conversionDestinations').innerHTML='<tr><td colspan="4">Conversion metrics are temporarily unavailable.</td></tr>';}
 }
-$('#refreshConversion')?.addEventListener('click',loadConversionDashboard);
+document.addEventListener('click',e=>{
+  const btn=e.target.closest('#refreshConversion');if(!btn)return;
+  e.preventDefault();
+  if(btn.dataset.loading==='1')return;
+  btn.dataset.loading='1';const original=btn.textContent;btn.textContent='Refreshing…';btn.disabled=true;
+  loadConversionDashboard().finally(()=>{btn.dataset.loading='0';btn.textContent=original;btn.disabled=false;});
+});
 async function fetchJsonWithTimeout(url,options={},timeoutMs=12000){
   const controller=new AbortController();
   const timer=setTimeout(()=>controller.abort(),timeoutMs);
