@@ -494,3 +494,31 @@
   .day-experience-card{grid-template-columns:76px minmax(0,1fr)}
   .day-experience-card img{width:76px;height:68px}
 }
+
+
+/* Mobile form overflow containment — keep all planner controls inside the card */
+@media(max-width:700px){
+  .consumer-trip-form,
+  .planner-step,
+  .planner-step .grid,
+  .planner-advanced,
+  .planner-advanced .grid,
+  .planner-submit{width:100%;max-width:100%;min-width:0}
+  .planner-step label,
+  .planner-advanced label{min-width:0;max-width:100%}
+  .planner-step input,
+  .planner-step select,
+  .planner-step textarea,
+  .planner-advanced input,
+  .planner-advanced select,
+  .planner-advanced textarea{
+    display:block;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box;
+  }
+  .planner-step textarea{resize:vertical}
+  .planner-submit{overflow:hidden}
+  .planner-submit .planner-cta{width:100%;max-width:100%;min-width:0}
+}
