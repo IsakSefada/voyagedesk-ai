@@ -565,3 +565,31 @@
     min-width:0!important;
   }
 }
+
+
+/* iOS Safari date inputs have an intrinsic width larger than narrow cards.
+   Constrain the label and the native date control itself without removing the picker. */
+@media(max-width:700px){
+  #quickPlanner .quick-date-label{
+    display:block!important;
+    inline-size:100%!important;
+    max-inline-size:100%!important;
+    min-inline-size:0!important;
+    overflow:hidden!important;
+  }
+  #quickPlanner input[type="date"]{
+    display:block!important;
+    inline-size:100%!important;
+    max-inline-size:100%!important;
+    min-inline-size:0!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+    overflow:hidden!important;
+  }
+  #quickPlanner input[type="date"]::-webkit-date-and-time-value{
+    min-width:0!important;
+    text-align:left;
+  }
+}
