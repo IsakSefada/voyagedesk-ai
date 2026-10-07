@@ -169,7 +169,7 @@ async function personalizedViatorActivities(trip={},limit=5){
   if(!destination)throw new Error('Destination is required.');
   const resolved=await resolveViatorDestination(destination);
   if(!resolved.match)throw new Error('No Viator destination match found.');
-  const pool=await viatorActivities(resolved.match,{count:20,currency:trip.currency||resolved.match.defaultCurrencyCode});
+  const pool=await viatorActivities(resolved.match,{count:20,currency:(trip.currency||'USD').toUpperCase()});
   return {
     resolvedDestination:resolved.match,
     travelerProfile:travelerActivityProfile(trip).themes,
