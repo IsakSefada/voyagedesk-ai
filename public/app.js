@@ -284,30 +284,43 @@ function trackViatorClick(el){
   const body=JSON.stringify(payload);try{navigator.sendBeacon('/api/viator/click',new Blob([body],{type:'application/json'}));}catch{fetch('/api/viator/click',{method:'POST',headers:{'Content-Type':'application/json'},body,keepalive:true}).catch(()=>{});}
 }
 function bindViatorClickTracking(){document.querySelectorAll('[data-viator-click]').forEach(el=>{if(el.dataset.trackingBound)return;el.dataset.trackingBound='1';el.addEventListener('click',()=>trackViatorClick(el));});}
+async function fetchJsonWithTimeout(url,options={},timeoutMs=12000){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),timeoutMs);
+  try{
+    const r=await fetch(url,{...options,signal:controller.signal});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(d.error||d.message||'Request failed');
+    return d;
+  }finally{clearTimeout(timer);}
+}
 async function loadViatorExperiences(){
   const host=$('#viatorExperiences');if(!host||!currentTrip)return;
   const tripKey=[currentTrip.destinations||'',currentTrip.startDate||'',currentTrip.endDate||'',currentTrip.interests||''].join('|').toLowerCase();
   if(viatorHistoryTripKey!==tripKey){viatorHistoryTripKey=tripKey;viatorRecommendationHistory=loadViatorHistory(tripKey);window.tripFiverViatorData=null;}
   host.classList.remove('hidden');host.innerHTML='<div class="experience-loading">Finding personalized experiences for your trip…</div>';
+  const destination=String(currentTrip.destinations||'').split(/[;\n]/)[0].trim();
   try{
-    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
-    let r;
-    try{r=await fetch('/api/viator/recommendations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...currentTrip,itinerary:currentItinerary,excludeViatorProductCodes:viatorRecommendationHistory,limit:3}),signal:controller.signal});}
-    finally{clearTimeout(timer);}
-    const d=await r.json();if(!r.ok)throw new Error(d.error||'Activity search failed');renderViatorExperiences(d);
-  }catch{
-    // Mobile/Safari resilience: if personalized matching is slow, fall back to the
-    // verified single-call Viator activity feed instead of leaving a spinner forever.
-    try{
-      const destination=String(currentTrip.destinations||'').split(/[;,\n]/)[0].trim();
-      const r=await fetch('/api/viator/activities?destination='+encodeURIComponent(destination)+'&limit=3&currency=USD');
-      const d=await r.json();if(!r.ok)throw new Error(d.error||'Activity fallback failed');
-      renderViatorExperiences({provider:'Viator',recommendations:d.products||[],dayMatches:[]});
-    }catch{
-      host.classList.remove('hidden');
-      host.innerHTML='<div class="experience-loading">Experiences could not load right now. <button type="button" class="secondary" id="retryViator">Try again</button></div>';
-      $('#retryViator')?.addEventListener('click',loadViatorExperiences,{once:true});
-    }
+    const d=await fetchJsonWithTimeout('/api/viator/recommendations',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({...currentTrip,itinerary:currentItinerary,excludeViatorProductCodes:viatorRecommendationHistory,limit:3})
+    },10000);
+    if(!(d.recommendations||[]).length)throw new Error('No personalized Viator recommendations returned');
+    renderViatorExperiences(d);
+    return;
+  }catch(err){
+    console.warn('[TripFiver Viator] personalized recommendations unavailable; using destination fallback',err);
+  }
+  try{
+    const d=await fetchJsonWithTimeout('/api/viator/activities?destination='+encodeURIComponent(destination)+'&limit=3&currency=USD',{},10000);
+    if(!(d.products||[]).length)throw new Error('No Viator fallback products returned');
+    renderViatorExperiences({provider:'Viator',recommendations:d.products||[],dayMatches:[]});
+  }catch(err){
+    console.warn('[TripFiver Viator] destination fallback unavailable',err);
+    host.classList.remove('hidden');
+    host.innerHTML='<div class="experience-loading">Experiences could not load right now. <button type="button" class="secondary" id="retryViator">Try again</button></div>';
+    $('#retryViator')?.addEventListener('click',loadViatorExperiences,{once:true});
   }
 }
 function renderProposal(it){
