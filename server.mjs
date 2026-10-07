@@ -97,7 +97,15 @@ async function resolveViatorDestination(query){
   if(!raw)throw new Error('Destination is required.');
   const primary=raw.split(/[;,\n]/)[0].trim();
   const items=await viatorDestinations();
-  const matches=items.map(d=>({d,score:rankViatorDestination(primary,d)})).filter(x=>x.score>=0).sort((a,b)=>b.score-a.score||String(a.d.name).localeCompare(String(b.d.name))).slice(0,8);
+  const scoreMatches=value=>items.map(d=>({d,score:rankViatorDestination(value,d)})).filter(x=>x.score>=0).sort((a,b)=>b.score-a.score||String(a.d.name).localeCompare(String(b.d.name))).slice(0,8);
+  let matches=scoreMatches(primary);
+  // Keep exact matching as the safety rule, but tolerate common user-entered
+  // qualifiers such as "Paris France" or "Paris, France". Only strip a trailing
+  // country/region when the full value has no exact Viator taxonomy match.
+  if(!matches.length){
+    const words=normalizeDestinationName(primary).split(' ').filter(Boolean);
+    for(let cut=words.length-1;cut>=1&&!matches.length;cut--)matches=scoreMatches(words.slice(0,cut).join(' '));
+  }
   return {
     query:primary,
     match:matches[0]?.d||null,
