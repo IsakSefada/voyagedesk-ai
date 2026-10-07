@@ -494,7 +494,26 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
   if(url.pathname==='/api/clients'&&req.method==='POST'){if(!CLOUD_ENABLED)return send(res,503,{error:'Clients require cloud mode. Configure Supabase first.'});try{return send(res,201,await cloudCreateClient(req,await parseBody(req)));}catch(err){return send(res,400,{error:err.message});}}
   if(url.pathname==='/api/agency-profile'&&req.method==='GET'){if(!CLOUD_ENABLED)return send(res,200,{local:true});try{return send(res,200,await cloudProfile(req));}catch(err){return send(res,401,{error:err.message});}}
   if(url.pathname==='/api/agency-profile'&&req.method==='PUT'){if(!CLOUD_ENABLED)return send(res,200,{local:true,...await parseBody(req)});try{return send(res,200,await cloudSaveProfile(req,await parseBody(req)));}catch(err){return send(res,400,{error:err.message});}}
-  if(url.pathname==='/api/generate-stream'&&req.method==='POST'){const body=await parseBody(req);res.writeHead(200,{'Content-Type':'application/x-ndjson; charset=utf-8','Cache-Control':'no-store','Transfer-Encoding':'chunked'});try{const restaurantCandidates=await restaurantCandidatesForTrip(body);const itinerary=await requestItinerary(buildPrompt(body,restaurantCandidates),body.generationMode||'fast');const finalItinerary=await enforceRegenerationDiversity(body,restaurantCandidates,itinerary);res.write(JSON.stringify({type:'done',mode:'ai',itinerary:finalItinerary})+'\n');}catch(err){const itinerary=demoItinerary(body);itinerary.demoReason=err.message;res.write(JSON.stringify({type:'done',mode:'demo',itinerary})+'\n');}return res.end();}
+  if(url.pathname==='/api/generate-stream'&&req.method==='POST'){const body=await parseBody(req);res.writeHead(200,{'Content-Type':'application/x-ndjson; charset=utf-8','Cache-Control':'no-store','Transfer-Encoding':'chunked'});const emit=obj=>res.write(JSON.stringify(obj)+'\n');const started=Date.now();try{
+    // Speed stage: for a brand-new trip, do not block the core itinerary on Google Places.
+    // Restaurant enrichment remains available for regenerations, where quality/variety matters more.
+    const isRegeneration=!!body.previousItinerary;
+    emit({type:'progress',stage:'itinerary',message:'Building your itinerary…'});
+    const placesStarted=Date.now();
+    const restaurantCandidates=isRegeneration?await restaurantCandidatesForTrip(body):[];
+    const placesMs=Date.now()-placesStarted;
+    const aiStarted=Date.now();
+    const itinerary=await requestItinerary(buildPrompt(body,restaurantCandidates),body.generationMode||'fast');
+    const aiMs=Date.now()-aiStarted;
+    let finalItinerary=itinerary,diversityMs=0;
+    if(isRegeneration){
+      emit({type:'progress',stage:'personalization',message:'Checking itinerary variety…'});
+      const diversityStarted=Date.now();
+      finalItinerary=await enforceRegenerationDiversity(body,restaurantCandidates,itinerary);
+      diversityMs=Date.now()-diversityStarted;
+    }
+    emit({type:'done',mode:'ai',itinerary:finalItinerary,timing:{totalMs:Date.now()-started,placesMs,aiMs,diversityMs,isRegeneration}});
+  }catch(err){const itinerary=demoItinerary(body);itinerary.demoReason=err.message;emit({type:'done',mode:'demo',itinerary,timing:{totalMs:Date.now()-started}});}return res.end();}
   if(url.pathname==='/api/translate-stream'&&req.method==='POST'){const body=await parseBody(req);res.writeHead(200,{'Content-Type':'application/x-ndjson; charset=utf-8','Cache-Control':'no-store','Transfer-Encoding':'chunked'});try{if(!body.language)throw new Error('Choose a translation language.');const prompt=`Translate the travel proposal JSON below into ${body.language}. Preserve the exact JSON structure, array structure, numbers, airport/IATA codes, currency codes, URLs, brand names, and proper nouns when they should not be translated. Translate client-facing prose naturally and concisely. Preserve Anglo-American number formatting: comma thousands separators and period decimals. Return ONLY valid JSON, no markdown.\n\n${JSON.stringify(body.itinerary)}`;await streamOpenAIJson(res,{prompt,mode:'fast',donePayload:itinerary=>({itinerary,language:body.language})});}catch(err){res.write(JSON.stringify({type:'error',error:err.message||'Translation failed'})+'\n');}return res.end();}
   if(url.pathname==='/api/generate'&&req.method==='POST'){const body=await parseBody(req);let itinerary,mode='ai';try{itinerary=await callOpenAI(body);}catch(err){mode='demo';itinerary=demoItinerary(body);itinerary.demoReason=err.message;}return send(res,200,{mode,itinerary});}
   if(url.pathname==='/api/translate'&&req.method==='POST'){const body=await parseBody(req);try{return send(res,200,{itinerary:await translateItinerary(body.itinerary,body.language),language:body.language});}catch(err){return send(res,400,{error:err.message||'Translation failed'});}}
