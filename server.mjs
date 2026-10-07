@@ -92,6 +92,37 @@ async function resolveViatorDestination(query){
     taxonomyCachedAt:new Date(viatorDestinationCache.loadedAt).toISOString()
   };
 }
+async function viatorActivities(destination,{count=10,currency}={}){
+  const destinationId=Number(destination?.destinationId);
+  if(!destinationId)throw new Error('A valid Viator destination ID is required.');
+  const requestCount=Math.min(20,Math.max(1,Number(count)||10));
+  const body={
+    filtering:{destination:String(destinationId)},
+    sorting:{sort:'TRAVELER_RATING',order:'DESCENDING'},
+    pagination:{start:1,count:requestCount},
+    currency:(currency||destination.defaultCurrencyCode||'USD').toUpperCase()
+  };
+  const data=await viatorFetch('/products/search',{method:'POST',body});
+  const products=Array.isArray(data?.products)?data.products:[];
+  return {
+    destination:{destinationId,name:destination.name,type:destination.type,currency:body.currency},
+    count:products.length,
+    totalCount:data?.totalCount??null,
+    products:products.map(p=>({
+      productCode:p.productCode,
+      title:p.title,
+      description:p.description,
+      productUrl:p.productUrl,
+      images:p.images||[],
+      reviews:p.reviews||null,
+      duration:p.duration||null,
+      pricing:p.pricing||null,
+      destinations:p.destinations||[],
+      flags:p.flags||[]
+    }))
+  };
+}
+
 
 const mime = {'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml'};
 async function readTrips(){ try{return JSON.parse(await readFile(dataFile,'utf8'));}catch{return [];} }
@@ -375,6 +406,16 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
       const result=await resolveViatorDestination(query);
       if(!result.match)return send(res,404,{error:'No Viator destination match found.',...result});
       return send(res,200,{provider:'Viator',...result});
+    }catch(err){return send(res,503,{error:err.message,provider:'Viator'});}
+  }
+  if(url.pathname==='/api/viator/activities'&&req.method==='GET'){
+    const query=(url.searchParams.get('destination')||url.searchParams.get('query')||'').trim();
+    if(!query)return send(res,400,{error:'Destination is required.'});
+    try{
+      const resolved=await resolveViatorDestination(query);
+      if(!resolved.match)return send(res,404,{error:'No Viator destination match found.',provider:'Viator',query});
+      const results=await viatorActivities(resolved.match,{count:url.searchParams.get('limit')||10,currency:url.searchParams.get('currency')||resolved.match.defaultCurrencyCode});
+      return send(res,200,{provider:'Viator',query,resolvedDestination:resolved.match,...results});
     }catch(err){return send(res,503,{error:err.message,provider:'Viator'});}
   }
   if(url.pathname==='/api/booking-links'&&req.method==='POST')return send(res,200,bookingLinks(await parseBody(req)));
