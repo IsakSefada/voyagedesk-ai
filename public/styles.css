@@ -611,3 +611,40 @@
     cursor:pointer;
   }
 }
+
+
+/* Final iPhone date-field sizing: retain native calendar without intrinsic overflow */
+@media(max-width:700px){
+  #quickPlanner .quick-date-label{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    overflow:visible!important;
+  }
+  #quickPlanner .quick-date-label input[type="date"]{
+    -webkit-appearance:none!important;
+    appearance:none!important;
+    display:block!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    height:48px!important;
+    box-sizing:border-box!important;
+    padding:0 42px 0 12px!important;
+    background-color:#fff;
+    position:relative;
+  }
+  #quickPlanner .quick-date-label input[type="date"]::-webkit-calendar-picker-indicator{
+    display:block!important;
+    opacity:1!important;
+    visibility:visible!important;
+    position:absolute!important;
+    right:12px!important;
+    top:50%!important;
+    transform:translateY(-50%)!important;
+    width:20px!important;
+    height:20px!important;
+    margin:0!important;
+    padding:0!important;
+  }
+}
