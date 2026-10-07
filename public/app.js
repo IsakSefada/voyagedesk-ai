@@ -1,5 +1,7 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 let currentTrip=null,currentItinerary=null,cloudEnabled=false,currentUser=null,clientsCache=[];
+let viatorRecommendationHistory=[];
+let viatorHistoryTripKey='';
 const nativeFetch=window.fetch.bind(window);
 const SESSION_KEY='voyagedesk-session-v03';
 function getSession(){try{return JSON.parse(localStorage.getItem(SESSION_KEY)||'null');}catch{return null;}}
@@ -251,6 +253,8 @@ function viatorDuration(duration={}){const mins=duration.fixedDurationInMinutes|
 function viatorPrice(product){const p=product.pricing?.summary?.fromPrice,c=product.pricing?.currency;if(p==null)return'';try{return new Intl.NumberFormat(undefined,{style:'currency',currency:c||'USD',maximumFractionDigits:0}).format(p);}catch{return `${p} ${c||''}`.trim();}}
 function renderViatorExperiences(data){
   window.tripFiverViatorData=data;
+  const shown=(data?.recommendations||[]).map(x=>String(x.productCode||'')).filter(Boolean);
+  viatorRecommendationHistory=[...new Set([...viatorRecommendationHistory,...shown])].slice(-60);
   const host=$('#viatorExperiences');if(!host)return;
   const items=(data?.recommendations||[]).slice(0,3);
   if(!items.length){host.classList.add('hidden');host.innerHTML='';return;}
@@ -274,8 +278,10 @@ function trackViatorClick(el){
 function bindViatorClickTracking(){document.querySelectorAll('[data-viator-click]').forEach(el=>{if(el.dataset.trackingBound)return;el.dataset.trackingBound='1';el.addEventListener('click',()=>trackViatorClick(el));});}
 async function loadViatorExperiences(){
   const host=$('#viatorExperiences');if(!host||!currentTrip)return;
+  const tripKey=[currentTrip.destinations||'',currentTrip.startDate||'',currentTrip.endDate||'',currentTrip.interests||''].join('|').toLowerCase();
+  if(viatorHistoryTripKey!==tripKey){viatorHistoryTripKey=tripKey;viatorRecommendationHistory=[];window.tripFiverViatorData=null;}
   host.classList.remove('hidden');host.innerHTML='<div class="experience-loading">Finding personalized experiences for your trip…</div>';
-  try{const r=await fetch('/api/viator/recommendations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...currentTrip,itinerary:currentItinerary,excludeViatorProductCodes:(window.tripFiverViatorData?.recommendations||[]).map(x=>x.productCode).filter(Boolean),limit:3})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Activity search failed');renderViatorExperiences(d);}catch{host.classList.add('hidden');host.innerHTML='';}
+  try{const r=await fetch('/api/viator/recommendations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...currentTrip,itinerary:currentItinerary,excludeViatorProductCodes:viatorRecommendationHistory,limit:3})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Activity search failed');renderViatorExperiences(d);}catch{host.classList.add('hidden');host.innerHTML='';}
 }
 function renderProposal(it){
   currentItinerary=it;
