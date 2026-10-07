@@ -275,7 +275,7 @@ function bindViatorClickTracking(){document.querySelectorAll('[data-viator-click
 async function loadViatorExperiences(){
   const host=$('#viatorExperiences');if(!host||!currentTrip)return;
   host.classList.remove('hidden');host.innerHTML='<div class="experience-loading">Finding personalized experiences for your trip…</div>';
-  try{const r=await fetch('/api/viator/recommendations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...currentTrip,itinerary:currentItinerary,limit:3})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Activity search failed');renderViatorExperiences(d);}catch{host.classList.add('hidden');host.innerHTML='';}
+  try{const r=await fetch('/api/viator/recommendations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...currentTrip,itinerary:currentItinerary,excludeViatorProductCodes:(window.tripFiverViatorData?.recommendations||[]).map(x=>x.productCode).filter(Boolean),limit:3})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Activity search failed');renderViatorExperiences(d);}catch{host.classList.add('hidden');host.innerHTML='';}
 }
 function renderProposal(it){
   currentItinerary=it;
