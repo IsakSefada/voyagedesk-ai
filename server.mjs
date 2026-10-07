@@ -474,6 +474,16 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
       return send(res,200,{provider:'Viator',query,resolvedDestination:resolved.match,...results});
     }catch(err){return send(res,503,{error:err.message,provider:'Viator'});}
   }
+  if(url.pathname==='/api/viator/recommendations-test'&&req.method==='GET'){
+    const destination=(url.searchParams.get('destination')||'').trim();
+    if(!destination)return send(res,400,{error:'Destination is required.'});
+    const interests=(url.searchParams.get('interests')||'').split(',').map(x=>x.trim()).filter(Boolean);
+    const notes=(url.searchParams.get('notes')||'').trim();
+    try{
+      const result=await personalizedViatorActivities({destinations:destination,interests,notes},url.searchParams.get('limit')||5);
+      return send(res,200,{provider:'Viator',testMode:true,input:{destination,interests,notes},...result});
+    }catch(err){return send(res,503,{error:err.message,provider:'Viator'});}
+  }
   if(url.pathname==='/api/viator/recommendations'&&req.method==='POST'){
     const body=await parseBody(req);
     try{
