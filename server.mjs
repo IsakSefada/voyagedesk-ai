@@ -77,7 +77,10 @@ function rankViatorDestination(query,d){
   const aliases=new Map([
     ['newyork','new york'],
     ['newyorkcity','new york city'],
-    ['nyc','new york city']
+    ['nyc','new york city'],
+    ['telaviv','tel aviv'],
+    ['telavivyafo','tel aviv'],
+    ['telavivjaffa','tel aviv']
   ]);
   const canonical=s=>aliases.get(s)||s;
   const cq=canonical(q),cn=canonical(name);
