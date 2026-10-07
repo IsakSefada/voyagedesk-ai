@@ -175,7 +175,16 @@ function matchViatorToDays(products,days=[]){
   const used=new Set();
   return (days||[]).map((day,index)=>{
     const dt=viatorDayText(day),dayTokens=viatorTokens(dt);
-    const ranked=(products||[]).filter(p=>!used.has(p.productCode)).map(p=>{
+    // Protect low-capacity travel days. Arrival/departure/rest days should not be
+    // turned into long affiliate-tour days, even when the product is relevant.
+    const isTravelDay=/arrival|arrive|check[- ]?in|jet lag|departure|depart|check[- ]?out|airport|flight home|fly home|transfer to .*airport|rest day|recovery day/.test(dt);
+    const maxTravelDayMinutes=180;
+    const ranked=(products||[]).filter(p=>{
+      if(used.has(p.productCode))return false;
+      if(!isTravelDay)return true;
+      const d=p.duration||{},mins=Number(d.fixedDurationInMinutes||d.variableDurationToMinutes||d.variableDurationFromMinutes||0);
+      return mins>0&&mins<=maxTravelDayMinutes;
+    }).map(p=>{
       const pt=viatorActivityText(p),ptokens=new Set(viatorTokens(pt));
       const shared=dayTokens.filter(t=>ptokens.has(t));
       let dayScore=shared.length*7;
@@ -187,7 +196,10 @@ function matchViatorToDays(products,days=[]){
       return {product:p,dayScore,shared};
     }).sort((a,b)=>b.dayScore-a.dayScore||b.product.match.score-a.product.match.score);
     const best=ranked[0];
-    if(!best||best.dayScore<7)return null;
+    // On arrival/departure/rest days, only show a short experience when the
+    // geographic/theme fit is unusually strong; otherwise intentionally show none.
+    const minimumScore=isTravelDay?20:7;
+    if(!best||best.dayScore<minimumScore)return null;
     used.add(best.product.productCode);
     return {day:Number(day.day)||index+1,dayTitle:day.title||'',dayLocation:day.location||'',dayMatchScore:best.dayScore,dayMatchReasons:best.shared.slice(0,3),activity:best.product};
   }).filter(Boolean).slice(0,3);
