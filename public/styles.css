@@ -398,3 +398,23 @@
     padding:24px 20px 30px;
   }
 }
+
+
+/* Stage 4 — personalized Viator experience cards */
+#viatorExperiences{margin:26px 0 30px}
+.experience-head{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-bottom:14px}
+.experience-head h3{font-size:24px;margin:4px 0}.experience-head p{margin:0;color:var(--muted)}
+.experience-kicker{font-size:10px;font-weight:900;letter-spacing:.1em;color:#4f46e5}
+.experience-provider{font-size:11px;color:var(--muted);white-space:nowrap}
+.experience-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+.experience-card{min-width:0;overflow:hidden;background:#fff;border:1px solid var(--line);border-radius:17px;box-shadow:0 9px 26px rgba(20,44,84,.08)}
+.experience-card>img{display:block;width:100%;height:175px;object-fit:cover}
+.experience-body{padding:16px}.experience-body h4{font-size:17px;line-height:1.3;margin:0 0 10px}
+.experience-meta{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;font-weight:750;color:#45546b}
+.experience-why{font-size:12px;line-height:1.45;color:#59677c;background:#f6f7ff;border-radius:10px;padding:10px;margin:13px 0}
+.experience-foot{display:flex;justify-content:space-between;align-items:end;gap:10px;margin-top:14px}.experience-foot small,.experience-foot strong{display:block}.experience-foot small{font-size:10px;color:var(--muted)}.experience-foot strong{font-size:16px}
+.experience-btn{text-decoration:none;text-align:center;padding:10px 12px;font-size:12px}
+.experience-loading{padding:18px;border:1px solid var(--line);border-radius:14px;background:#fff;color:var(--muted)}
+@media(max-width:1000px){.experience-grid{grid-template-columns:1fr 1fr}.experience-grid .experience-card:last-child{display:none}}
+@media(max-width:700px){#viatorExperiences{margin:22px 0}.experience-head{align-items:flex-start;flex-direction:column;gap:7px}.experience-head h3{font-size:22px}.experience-grid{grid-template-columns:1fr;gap:12px}.experience-grid .experience-card:last-child{display:block}.experience-card{display:grid;grid-template-columns:120px minmax(0,1fr)}.experience-card>img{height:100%;min-height:190px}.experience-body{padding:14px}.experience-foot{align-items:stretch;flex-direction:column}.experience-btn{width:100%}}
+@media(max-width:390px){.experience-card{display:block}.experience-card>img{height:175px;min-height:0}}
