@@ -110,7 +110,7 @@ $('#resetForm')?.addEventListener('submit',async e=>{
 $('#accountBtn')?.addEventListener('click',()=>{$('#authGate')?.classList.remove('hidden');setAuthMode('login');});
 $('#logoutBtn')?.addEventListener('click',async()=>{try{await fetch('/api/auth/logout',{method:'POST'});}catch{}setSession(null);currentUser=null;$('#signedInEmail').textContent='';$('#logoutBtn').classList.add('hidden');$('#authGate').classList.add('hidden');});
 
-function setView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===name));document.querySelectorAll('.nav').forEach(v=>v.classList.toggle('active',v.dataset.view===name));const title=document.querySelector('#pageTitle');if(title)title.textContent={new:'Plan My Trip',trips:'My Trips',clients:'Clients',settings:'Branding'}[name]||'Welcome to TripFiver';window.scrollTo({top:0,behavior:'smooth'});}document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));document.querySelector('#newTripTop')?.addEventListener('click',()=>setView('new'));document.querySelector('#heroNew')?.addEventListener('click',()=>setView('new'));
+function setView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===name));document.querySelectorAll('.nav').forEach(v=>v.classList.toggle('active',v.dataset.view===name));const title=document.querySelector('#pageTitle');if(title)title.textContent={new:'Plan My Trip',trips:'My Trips',conversion:'Revenue & Conversion',clients:'Clients',settings:'Branding'}[name]||'Welcome to TripFiver';if(name==='conversion')loadConversionDashboard();window.scrollTo({top:0,behavior:'smooth'});}document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));document.querySelector('#newTripTop')?.addEventListener('click',()=>setView('new'));document.querySelector('#heroNew')?.addEventListener('click',()=>setView('new'));
 
 
 // Smart city and airport autocomplete. This local catalogue keeps the MVP fast and predictable;
@@ -298,6 +298,19 @@ function bindExpediaConversionTracking(){
   // at the TripFiver widget boundary without changing affiliate attribution.
   widget.addEventListener('pointerdown',()=>trackConversion('expedia_widget_click',{source:'expedia-book-your-trip'}),{capture:true});
 }
+async function loadConversionDashboard(){
+  try{
+    const r=await fetch('/api/conversion-summary');const d=await r.json();if(!r.ok)throw new Error(d.error||'Could not load conversion metrics');
+    const counts=d.counts||{};
+    if($('#metricTrips'))$('#metricTrips').textContent=Number(counts.trip_created||0).toLocaleString('en-US');
+    if($('#metricViator'))$('#metricViator').textContent=Number(counts.viator_click||0).toLocaleString('en-US');
+    if($('#metricExpedia'))$('#metricExpedia').textContent=Number(counts.expedia_widget_click||0).toLocaleString('en-US');
+    if($('#metricEvents'))$('#metricEvents').textContent=Number(d.totalEvents||0).toLocaleString('en-US');
+    const rows=(d.topDestinations||[]).map(x=>`<tr><td>${escapeHtml(x.destination)}</td><td>${Number(x.trip_created||0)}</td><td>${Number(x.viator_click||0)}</td><td>${Number(x.expedia_widget_click||0)}</td></tr>`).join('');
+    if($('#conversionDestinations'))$('#conversionDestinations').innerHTML=rows||'<tr><td colspan="4">No conversion activity tracked yet.</td></tr>';
+  }catch(err){if($('#conversionDestinations'))$('#conversionDestinations').innerHTML='<tr><td colspan="4">Conversion metrics are temporarily unavailable.</td></tr>';}
+}
+$('#refreshConversion')?.addEventListener('click',loadConversionDashboard);
 async function fetchJsonWithTimeout(url,options={},timeoutMs=12000){
   const controller=new AbortController();
   const timer=setTimeout(()=>controller.abort(),timeoutMs);
