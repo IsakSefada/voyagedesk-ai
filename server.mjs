@@ -164,6 +164,34 @@ function rankViatorActivities(products,trip={},limit=5){
     .sort((a,b)=>b.match.score-a.match.score||Number(b.reviews?.combinedAverageRating||0)-Number(a.reviews?.combinedAverageRating||0)||Number(b.reviews?.totalReviews||0)-Number(a.reviews?.totalReviews||0))
     .slice(0,Math.min(10,Math.max(1,Number(limit)||5)));
 }
+function viatorDayText(day={}){
+  return [day.location,day.title,...(day.morning||[]),...(day.afternoon||[]),...(day.evening||[])].filter(Boolean).join(' ').toLowerCase();
+}
+function viatorTokens(text=''){
+  const stop=new Set(['istanbul','tour','guided','guide','private','experience','with','from','your','this','that','the','and','for','into','around','visit','explore','start','continue','area','city']);
+  return [...new Set(String(text).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').match(/[a-z0-9]{4,}/g)||[])].filter(x=>!stop.has(x));
+}
+function matchViatorToDays(products,days=[]){
+  const used=new Set();
+  return (days||[]).map((day,index)=>{
+    const dt=viatorDayText(day),dayTokens=viatorTokens(dt);
+    const ranked=(products||[]).filter(p=>!used.has(p.productCode)).map(p=>{
+      const pt=viatorActivityText(p),ptokens=new Set(viatorTokens(pt));
+      const shared=dayTokens.filter(t=>ptokens.has(t));
+      let dayScore=shared.length*7;
+      if(/food|market|taste|culinary|restaurant/.test(dt)&&/food|market|taste|culinary|restaurant/.test(pt))dayScore+=12;
+      if(/historic|history|mosque|palace|museum|sultanahmet/.test(dt)&&/historic|history|mosque|palace|museum|sultanahmet|hagia|basilica/.test(pt))dayScore+=12;
+      if(/bosphorus|waterfront|ortakoy|besiktas|boat|cruise/.test(dt)&&/bosphorus|boat|cruise|waterfront|ortakoy|besiktas/.test(pt))dayScore+=12;
+      if(/beyoglu|galata|karakoy|pera/.test(dt)&&/beyoglu|galata|karakoy|pera/.test(pt))dayScore+=16;
+      if(/kadikoy|moda|asian side/.test(dt)&&/kadikoy|moda|asian side/.test(pt))dayScore+=16;
+      return {product:p,dayScore,shared};
+    }).sort((a,b)=>b.dayScore-a.dayScore||b.product.match.score-a.product.match.score);
+    const best=ranked[0];
+    if(!best||best.dayScore<7)return null;
+    used.add(best.product.productCode);
+    return {day:Number(day.day)||index+1,dayTitle:day.title||'',dayLocation:day.location||'',dayMatchScore:best.dayScore,dayMatchReasons:best.shared.slice(0,3),activity:best.product};
+  }).filter(Boolean).slice(0,3);
+}
 async function personalizedViatorActivities(trip={},limit=5){
   const destination=String(trip.destinations||trip.destination||'').split(/[;,\n]/)[0].trim();
   if(!destination)throw new Error('Destination is required.');
@@ -174,7 +202,8 @@ async function personalizedViatorActivities(trip={},limit=5){
     resolvedDestination:resolved.match,
     travelerProfile:travelerActivityProfile(trip).themes,
     candidateCount:pool.count,
-    recommendations:rankViatorActivities(pool.products,trip,limit)
+    recommendations:rankViatorActivities(pool.products,trip,limit),
+    dayMatches:matchViatorToDays(rankViatorActivities(pool.products,trip,10),trip.itinerary?.days||trip.days||[])
   };
 }
 
@@ -490,6 +519,12 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
       const result=await personalizedViatorActivities(body,body.limit||5);
       return send(res,200,{provider:'Viator',...result});
     }catch(err){return send(res,503,{error:err.message,provider:'Viator'});}
+  }
+  if(url.pathname==='/api/viator/click'&&req.method==='POST'){
+    const body=await parseBody(req);
+    const destination=String(body.destination||'').slice(0,120),productCode=String(body.productCode||'').slice(0,80);
+    console.log('[viator-click]',JSON.stringify({at:new Date().toISOString(),destination,productCode,day:Number(body.day)||null,source:String(body.source||'trip-proposal').slice(0,60)}));
+    return send(res,200,{ok:true});
   }
   if(url.pathname==='/api/booking-links'&&req.method==='POST')return send(res,200,bookingLinks(await parseBody(req)));
   const match=url.pathname.match(/^\/api\/trips\/([^/]+)$/);
