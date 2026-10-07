@@ -92,14 +92,14 @@ async function resolveViatorDestination(query){
     taxonomyCachedAt:new Date(viatorDestinationCache.loadedAt).toISOString()
   };
 }
-async function viatorActivities(destination,{count=10,currency}={}){
+async function viatorActivities(destination,{count=10,currency,start=1}={}){
   const destinationId=Number(destination?.destinationId);
   if(!destinationId)throw new Error('A valid Viator destination ID is required.');
   const requestCount=Math.min(20,Math.max(1,Number(count)||10));
   const body={
     filtering:{destination:String(destinationId)},
     sorting:{sort:'TRAVELER_RATING',order:'DESCENDING'},
-    pagination:{start:1,count:requestCount},
+    pagination:{start:Math.max(1,Number(start)||1),count:requestCount},
     currency:(currency||destination.defaultCurrencyCode||'USD').toUpperCase()
   };
   const data=await viatorFetch('/products/search',{method:'POST',body});
@@ -197,13 +197,27 @@ async function personalizedViatorActivities(trip={},limit=5){
   if(!destination)throw new Error('Destination is required.');
   const resolved=await resolveViatorDestination(destination);
   if(!resolved.match)throw new Error('No Viator destination match found.');
-  const pool=await viatorActivities(resolved.match,{count:20,currency:(trip.currency||'USD').toUpperCase()});
+  const currency=(trip.currency||'USD').toUpperCase();
+  const priorCodes=new Set((trip.excludeViatorProductCodes||[]).map(String));
+  // Keep the strongest first page, but blend in a rotating discovery page so repeated
+  // generations surface fresh, still-relevant experiences instead of the same five.
+  const discoveryStarts=[21,41,61,81];
+  const discoveryStart=discoveryStarts[Math.floor(Math.random()*discoveryStarts.length)];
+  const [primary,discovery]=await Promise.all([
+    viatorActivities(resolved.match,{count:20,currency,start:1}),
+    viatorActivities(resolved.match,{count:20,currency,start:discoveryStart})
+  ]);
+  const seen=new Set(),combined=[...(primary.products||[]),...(discovery.products||[])].filter(p=>p?.productCode&&!seen.has(p.productCode)&&seen.add(p.productCode));
+  let eligible=combined.filter(p=>!priorCodes.has(String(p.productCode)));
+  if(eligible.length<Math.max(5,Number(limit)||5))eligible=combined;
+  const ranked=rankViatorActivities(eligible,trip,10);
   return {
     resolvedDestination:resolved.match,
     travelerProfile:travelerActivityProfile(trip).themes,
-    candidateCount:pool.count,
-    recommendations:rankViatorActivities(pool.products,trip,limit),
-    dayMatches:matchViatorToDays(rankViatorActivities(pool.products,trip,10),trip.itinerary?.days||trip.days||[])
+    candidateCount:combined.length,
+    discoveryStart,
+    recommendations:ranked.slice(0,Math.min(10,Math.max(1,Number(limit)||5))),
+    dayMatches:matchViatorToDays(ranked,trip.itinerary?.days||trip.days||[])
   };
 }
 
