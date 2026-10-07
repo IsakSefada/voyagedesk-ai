@@ -593,3 +593,21 @@
     text-align:left;
   }
 }
+
+
+/* Keep the native iOS calendar affordance visible after width containment */
+@media(max-width:700px){
+  #quickPlanner input[type="date"]{
+    -webkit-appearance:auto!important;
+    appearance:auto!important;
+    padding-right:10px!important;
+  }
+  #quickPlanner input[type="date"]::-webkit-calendar-picker-indicator{
+    display:block!important;
+    opacity:1!important;
+    visibility:visible!important;
+    position:relative!important;
+    flex:0 0 auto!important;
+    cursor:pointer;
+  }
+}
