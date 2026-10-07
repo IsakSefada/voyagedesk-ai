@@ -658,3 +658,9 @@
 .conversion-table-wrap{overflow-x:auto;margin:8px 0 14px}
 @media(max-width:700px){.conversion-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.conversion-dashboard{width:100%;max-width:100%;box-sizing:border-box}}
 @media(max-width:390px){.conversion-stats{grid-template-columns:1fr}}
+
+/* Home quick-planner autocomplete: dropdown must escape the planner card. */
+.quick-planner{overflow:visible}
+.quick-location-field{position:relative;min-width:0}
+.quick-location-field .quick-suggestions{top:calc(100% + 4px);z-index:120;min-width:100%;text-align:left}
+.quick-location-field .quick-suggestions.open{display:block}
