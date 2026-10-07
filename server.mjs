@@ -30,6 +30,7 @@ await loadLocalEnv();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(__dirname, 'public');
 const dataFile = path.join(__dirname, 'data', 'trips.json');
+const conversionFile = path.join(__dirname, 'data', 'conversion-events.json');
 const PORT = Number(process.env.PORT || 3000);
 const MODEL = process.env.OPENAI_MODEL || 'gpt-5.5';
 const AMADEUS_BASE = process.env.AMADEUS_ENV === 'production' ? 'https://api.amadeus.com' : 'https://test.api.amadeus.com';
@@ -631,6 +632,18 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
       return send(res,200,{provider:'Viator',...result});
     }catch(err){return send(res,503,{error:err.message,provider:'Viator'});}
   }
+  if(url.pathname==='/api/conversion-summary'&&req.method==='GET'){
+    let events=[];try{events=JSON.parse(await readFile(conversionFile,'utf8'));if(!Array.isArray(events))events=[];}catch{}
+    const counts={trip_created:0,viator_click:0,expedia_widget_click:0};
+    const destinations={};
+    for(const e of events){
+      if(e?.event in counts)counts[e.event]++;
+      const d=String(e?.destination||'').trim();
+      if(d){destinations[d]=destinations[d]||{trip_created:0,viator_click:0,expedia_widget_click:0};if(e?.event in destinations[d])destinations[d][e.event]++;}
+    }
+    const topDestinations=Object.entries(destinations).map(([destination,v])=>({destination,...v,total:v.trip_created+v.viator_click+v.expedia_widget_click})).sort((a,b)=>b.total-a.total).slice(0,8);
+    return send(res,200,{counts,totalEvents:events.length,topDestinations,recent:events.slice(-12).reverse()});
+  }
   if(url.pathname==='/api/conversion-event'&&req.method==='POST'){
     const body=await parseBody(req);
     const allowed=new Set(['trip_created','viator_click','expedia_widget_click']);
@@ -646,6 +659,11 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
       source:String(body.source||'tripfiver').slice(0,80)
     };
     console.log('[conversion-event]',JSON.stringify(record));
+    try{
+      let events=[];try{events=JSON.parse(await readFile(conversionFile,'utf8'));if(!Array.isArray(events))events=[];}catch{}
+      events.push(record);if(events.length>5000)events=events.slice(-5000);
+      await writeFile(conversionFile,JSON.stringify(events,null,2));
+    }catch(err){console.warn('[conversion-event-storage]',err.message);}
     return send(res,200,{ok:true});
   }
   if(url.pathname==='/api/viator/click'&&req.method==='POST'){
