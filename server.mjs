@@ -631,6 +631,23 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
       return send(res,200,{provider:'Viator',...result});
     }catch(err){return send(res,503,{error:err.message,provider:'Viator'});}
   }
+  if(url.pathname==='/api/conversion-event'&&req.method==='POST'){
+    const body=await parseBody(req);
+    const allowed=new Set(['trip_created','viator_click','expedia_widget_click']);
+    const event=String(body.event||'').slice(0,40);
+    if(!allowed.has(event))return send(res,400,{error:'Unsupported conversion event.'});
+    const record={
+      at:new Date().toISOString(),
+      event,
+      destination:String(body.destination||'').slice(0,120),
+      origin:String(body.origin||'').slice(0,120),
+      productCode:String(body.productCode||'').slice(0,80),
+      day:Number(body.day)||null,
+      source:String(body.source||'tripfiver').slice(0,80)
+    };
+    console.log('[conversion-event]',JSON.stringify(record));
+    return send(res,200,{ok:true});
+  }
   if(url.pathname==='/api/viator/click'&&req.method==='POST'){
     const body=await parseBody(req);
     const destination=String(body.destination||'').slice(0,120),productCode=String(body.productCode||'').slice(0,80);
