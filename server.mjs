@@ -250,7 +250,14 @@ function buildPrompt(trip,restaurantCandidates=[]){
 }
 function extractOutputText(data){return data?.output_text||data?.output?.flatMap(o=>o.content||[]).find(c=>c.type==='output_text')?.text||'';}
 function parseJsonText(text){return JSON.parse(String(text||'').trim().replace(/^```json\s*/i,'').replace(/```$/,'').trim());}
-function apiTuning(mode='fast'){return mode==='detailed'?{reasoning:{effort:'low'},text:{verbosity:'medium'}}:{reasoning:{effort:'low'},text:{verbosity:'medium'}};}
+function apiTuning(mode='fast'){
+  // Fast mode is the consumer default: itinerary quality comes from the prompt and
+  // deterministic post-processing, so avoid spending latency on hidden reasoning
+  // and keep client-facing prose compact. Detailed mode preserves the richer path.
+  return mode==='detailed'
+    ? {reasoning:{effort:'low'},text:{verbosity:'medium'}}
+    : {reasoning:{effort:'none'},text:{verbosity:'low'}};
+}
 async function restaurantCandidatesForTrip(trip){
   if(!process.env.GOOGLE_PLACES_API_KEY)return [];
   const destination=String(trip.destinations||'').split(/[,;\n]/)[0].trim();
@@ -281,9 +288,11 @@ function diversityRepairPrompt(trip,restaurantCandidates,draft,overlap){
 }
 async function requestItinerary(prompt,mode='fast'){
   const key=process.env.OPENAI_API_KEY;if(!key)throw new Error('OPENAI_API_KEY is not set.');
+  const started=Date.now();
   const response=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model:MODEL,input:prompt,...apiTuning(mode)})});
   const data=await response.json();if(!response.ok)throw new Error(data?.error?.message||'OpenAI request failed');
   const text=extractOutputText(data);if(!text)throw new Error('No itinerary text returned.');
+  console.log('[tripfiver-ai-timing]',JSON.stringify({mode,model:MODEL,ms:Date.now()-started,promptChars:prompt.length,outputChars:text.length}));
   return parseJsonText(text);
 }
 async function enforceRegenerationDiversity(trip,restaurantCandidates,itinerary){
