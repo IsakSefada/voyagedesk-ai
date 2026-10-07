@@ -504,6 +504,19 @@ initApp();
 
 
 // v0.4 consumer home shortcuts
+function setupQuickCityField(id){
+  const input=$('#'+id),box=$(`.suggestions[data-quick-for="${id}"]`);if(!input||!box)return;
+  const close=()=>box.classList.remove('open');
+  const update=()=>{
+    const items=cityMatches(input.value);
+    box.innerHTML=items.map((x,i)=>`<div class="suggestion" data-index="${i}"><span class="suggestion-main"><strong>${escapeHtml(x.city)}</strong><small>${escapeHtml(x.region)}, ${escapeHtml(x.country)}</small></span><span class="suggestion-code">${escapeHtml(x.cityCode)}</span></div>`).join('');
+    box.classList.toggle('open',items.length>0);
+    [...box.children].forEach((row,i)=>row.onmousedown=e=>{e.preventDefault();input.value=locationLabel(items[i]);close();});
+  };
+  input.addEventListener('input',update);input.addEventListener('focus',update);input.addEventListener('blur',()=>setTimeout(close,120));
+}
+setupQuickCityField('quickOrigin');
+setupQuickCityField('quickDestination');
 function openPlannerWithQuickValues(destination='',origin='',departure='',returnDate=''){
   const form=$('#tripForm');
   if(!form)return;
