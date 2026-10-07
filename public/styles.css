@@ -522,3 +522,21 @@
   .planner-submit{overflow:hidden}
   .planner-submit .planner-cta{width:100%;max-width:100%;min-width:0}
 }
+
+
+/* iPhone quick-planner containment — prevent tab/date controls from crossing card edge */
+@media(max-width:700px){
+  .quick-planner{width:100%;max-width:100%;min-width:0;overflow:hidden}
+  .quick-tabs{width:100%;max-width:100%;min-width:0;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .quick-tabs::-webkit-scrollbar{display:none}
+  .quick-tabs>*{min-width:0}
+  .quick-grid{width:100%;max-width:100%;min-width:0;overflow:hidden}
+  .quick-grid>*,.quick-grid label{min-width:0;max-width:100%}
+  .quick-grid input,.quick-grid select,.quick-grid textarea{
+    display:block;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+  }
+}
