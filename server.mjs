@@ -563,9 +563,18 @@ function bookingLinks(q){
   return {expediaHotel,expediaFlight,booking,googleFlights};
 }
 
+const conversionRecent=new Map();
+function conversionDuplicate(req,record){
+  const now=Date.now();
+  if(conversionRecent.size>10000)for(const [k,t] of conversionRecent)if(now-t>10000)conversionRecent.delete(k);
+  const key=String(req.socket.remoteAddress||'unknown')+':'+JSON.stringify(record);
+  const previous=conversionRecent.get(key);
+  conversionRecent.set(key,now);
+  return previous!==undefined&&now-previous<3000;
+}
 const requestBuckets=new Map();
 function apiRateAllowed(req,pathname){
- const policy=pathname==='/api/generate-stream'?8:pathname==='/api/viator/recommendations'?40:0;
+ const policy=pathname==='/api/generate-stream'?8:pathname==='/api/viator/recommendations'?40:pathname==='/api/conversion-event'?120:0;
  if(!policy)return true;
  const key=pathname+':'+String(req.socket.remoteAddress||'unknown'),now=Date.now();
  if(requestBuckets.size>10000)for(const [k,v] of requestBuckets)if(now-v.start>600000)requestBuckets.delete(k);
@@ -708,6 +717,7 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
     const record={event,destination:String(body.destination||'').slice(0,120),
       origin:String(body.origin||'').slice(0,120),product_code:String(body.productCode||'').slice(0,80),
       day:Number(body.day)||null,source:String(body.source||'tripfiver').slice(0,80)};
+    if(conversionDuplicate(req,record))return send(res,200,{ok:true,deduplicated:true});
     try{
       await conversionDb('',{method:'POST',body:record});
       return send(res,200,{ok:true});
