@@ -693,3 +693,7 @@
 /* Optional password visibility in all authentication forms */
 .auth-form .password-visibility-toggle{display:inline-flex;align-items:center;justify-content:center;align-self:flex-start;margin:7px 0 4px;padding:7px 12px;min-height:36px;border:1px solid var(--line,#d6dce7);border-radius:8px;background:transparent;color:var(--accent,#2156a8);font:inherit;font-size:13px;font-weight:600;cursor:pointer;touch-action:manipulation}
 .auth-form .password-visibility-toggle:focus-visible{outline:2px solid var(--accent,#2156a8);outline-offset:2px}
+
+/* Top-of-page mobile sign out: never visible on desktop or when logged out. */
+.mobile-signout{display:none!important}
+@media(max-width:700px){.header-actions .mobile-signout:not(.hidden){display:inline-flex!important;align-items:center;justify-content:center;min-height:40px;padding:9px 14px;white-space:nowrap}}
