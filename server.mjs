@@ -682,6 +682,11 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
     }catch(err){return send(res,503,{error:err.message,provider:'Viator'});}
   }
   if(url.pathname==='/api/conversion-summary'&&req.method==='GET'){
+    const admins=String(process.env.REVENUE_ADMIN_EMAILS||'').split(',').map(x=>x.trim().toLowerCase()).filter(Boolean);
+    if(!admins.length)return send(res,503,{error:'Revenue administrator access has not been configured.'});
+    let identity;
+    try{identity=await cloudUser(req);}catch{return send(res,401,{error:'Sign in to access Revenue.'});}
+    if(!admins.includes(String(identity.user.email||'').trim().toLowerCase()))return send(res,403,{error:'Revenue is restricted to administrators.'});
     try{
       const events=await conversionDb('?select=created_at,event,destination,origin,product_code,day,source&order=created_at.desc&limit=5000');
       const counts={trip_created:0,viator_click:0,expedia_widget_click:0},destinations={};
