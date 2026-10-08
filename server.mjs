@@ -492,7 +492,10 @@ async function conversionDb(endpoint,{method='GET',body}={}){
     body:body===undefined?undefined:JSON.stringify(body)
   });
   if(!r.ok)throw new Error('Conversion database request failed ('+r.status+'): '+(await r.text()).slice(0,300));
-  return r.status===204?[]:await r.json();
+  // PostgREST Prefer:return=minimal can produce an empty successful response (including 201).
+  // Never treat an empty successful body as a failed conversion write.
+  const responseText=await r.text();
+  return responseText.trim()?JSON.parse(responseText):[];
 }
 
 function bearer(req){const h=req.headers.authorization||'';return h.startsWith('Bearer ')?h.slice(7):'';}
