@@ -79,7 +79,7 @@ async function verifyCloudSession(){
   if(detectRecoverySession())return false;
   const s=getSession();if(!s?.access_token){currentUser=null;$('#authGate')?.classList.add('hidden');$('#logoutBtn')?.classList.add('hidden');return true;}
   let r=await fetch('/api/auth/user');if(!r.ok){setSession(null);currentUser=null;$('#authGate')?.classList.add('hidden');$('#logoutBtn')?.classList.add('hidden');return true;}
-  currentUser=await r.json();$('#authGate')?.classList.add('hidden');$('#signedInEmail').textContent=currentUser.email||'';$('#logoutBtn').classList.remove('hidden');return true;
+  currentUser=await r.json();updateAccountButton();$('#authGate')?.classList.add('hidden');$('#signedInEmail').textContent=currentUser.email||'';$('#logoutBtn').classList.remove('hidden');return true;
 }
 $('#loginForm')?.addEventListener('submit',async e=>{e.preventDefault();authMessage('Signing in…');const r=await nativeFetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:$('#loginEmail').value.trim(),password:$('#loginPassword').value})});const d=await r.json();if(!r.ok)return authMessage(d.error||'Sign in failed.',true);setSession(d);authMessage('Signed in.');await initializeSignedInWorkspace();});
 $('#signupForm')?.addEventListener('submit',async e=>{e.preventDefault();authMessage('Creating account…');const r=await nativeFetch('/api/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:$('#signupName').value.trim(),email:$('#signupEmail').value.trim(),password:$('#signupPassword').value})});const d=await r.json();if(!r.ok)return authMessage(d.error||'Account creation failed.',true);if(d.access_token){setSession(d);authMessage('Account created.');await initializeSignedInWorkspace();}else{setAuthMode('login');$('#loginEmail').value=$('#signupEmail').value.trim();authMessage('Account created. Check your email to confirm it, then sign in.');}});
@@ -107,8 +107,9 @@ $('#resetForm')?.addEventListener('submit',async e=>{
   setAuthMode('login');
   authMessage('Password changed successfully. Sign in with your new password.');
 });
-$('#accountBtn')?.addEventListener('click',()=>{$('#authGate')?.classList.remove('hidden');setAuthMode('login');});
-$('#logoutBtn')?.addEventListener('click',async()=>{try{await fetch('/api/auth/logout',{method:'POST'});}catch{}setSession(null);currentUser=null;clearConversionDashboard();$('#signedInEmail').textContent='';$('#logoutBtn').classList.add('hidden');$('#authGate').classList.add('hidden');});
+$('#accountBtn')?.addEventListener('click',()=>{if(currentUser){setView('trips');return;}$('#authGate')?.classList.remove('hidden');setAuthMode('login');});
+function updateAccountButton(){const b=$('#accountBtn');if(b)b.textContent=currentUser?'My Trips':'Sign In / Create Account';}
+$('#logoutBtn')?.addEventListener('click',async()=>{try{await fetch('/api/auth/logout',{method:'POST'});}catch{}setSession(null);currentUser=null;sessionStorage.removeItem('tripfiver-active-proposal-v1');currentTrip=null;currentItinerary=null;$('#proposal')?.classList.add('hidden');updateAccountButton();clearConversionDashboard();$('#signedInEmail').textContent='';$('#logoutBtn').classList.add('hidden');$('#authGate').classList.add('hidden');});
 
 function setView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===name));document.querySelectorAll('.nav').forEach(v=>v.classList.toggle('active',v.dataset.view===name));const title=document.querySelector('#pageTitle');if(title)title.textContent={new:'Plan My Trip',trips:'My Trips',conversion:'Revenue & Conversion',clients:'Clients',settings:'Branding'}[name]||'Welcome to TripFiver';if(name==='conversion')loadConversionDashboard();window.scrollTo({top:0,behavior:'smooth'});}document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));document.querySelector('#newTripTop')?.addEventListener('click',()=>setView('new'));document.querySelector('#heroNew')?.addEventListener('click',()=>setView('new'));
 
@@ -395,13 +396,14 @@ async function loadViatorExperiences(){
 const ACTIVE_TRIP_KEY='tripfiver-active-proposal-v1';
 function rememberActiveProposal(){
   try{
-    if(currentTrip&&currentItinerary)sessionStorage.setItem(ACTIVE_TRIP_KEY,JSON.stringify({trip:currentTrip,itinerary:currentItinerary}));
+    if(currentTrip&&currentItinerary)sessionStorage.setItem(ACTIVE_TRIP_KEY,JSON.stringify({trip:currentTrip,itinerary:currentItinerary,owner:currentUser?.id||null}));
   }catch(err){console.warn('Could not remember active trip',err);}
 }
 function restoreActiveProposal(){
   try{
     const saved=JSON.parse(sessionStorage.getItem(ACTIVE_TRIP_KEY)||'null');
     if(!saved?.trip||!Array.isArray(saved?.itinerary?.days))return;
+    if((saved.owner||null)!==(currentUser?.id||null))return;
     currentTrip=saved.trip;
     renderProposal(saved.itinerary);
     setView('new');
@@ -540,8 +542,8 @@ function bindTripActions(){
 $('#tripSearch')?.addEventListener('input',renderTripManager);$('#tripStatusFilter')?.addEventListener('change',renderTripManager);
 async function loadTrips(){const r=await fetch('/api/trips');savedTripsCache=await r.json();$('#tripCount').textContent=savedTripsCache.length;$('#draftCount').textContent=savedTripsCache.filter(t=>(t.status||'Draft')==='Draft').length;renderTripManager();$('#recentTrips').innerHTML=savedTripsCache.length?savedTripsCache.slice(0,4).map(t=>`<div class="trip-row clickable" data-recent-open="${escapeHtml(t.id)}"><div><strong>${escapeHtml(t.title||t.clientName||'Untitled trip')}</strong><small>${escapeHtml(t.clientName||'')}</small></div><div>${escapeHtml(t.destinations||'')}</div><div>${escapeHtml(tripDateLabel(t))}</div><span class="status-pill">${escapeHtml(t.status||'Draft')}</span></div>`).join(''):'No trips yet.';$$('[data-recent-open]').forEach(x=>x.onclick=()=>openSavedTrip(x.dataset.recentOpen));}
 async function status(){try{const r=await fetch('/api/status'),s=await r.json();cloudEnabled=!!s.supabase;$('#providerStatus').textContent=`OpenAI ${s.openai?'connected':'not connected'} · Amadeus ${s.amadeus?'connected':'not connected'} · Cloud ${s.supabase?'connected':'local mode'}`;$('#liveStatus').textContent=s.amadeus?'Ready':'Setup';$('#storageBadge').textContent=s.supabase?'CLOUD':'LOCAL';$('#storageBadge').classList.toggle('cloud',!!s.supabase);$('#cloudModeLabel').textContent=s.supabase?'Private cloud account':'Local prototype mode';return s;}catch{return {supabase:false};}}
-async function initializeSignedInWorkspace(){const ok=await verifyCloudSession();if(!ok)return;await loadCloudBrand();loadBrandForm();applyTripDefaults();await Promise.all([loadTrips(),loadClients()]);}
-async function initApp(){await status();const ok=await verifyCloudSession();if(!ok)return;if(currentUser){await loadCloudBrand();loadBrandForm();applyTripDefaults();await Promise.all([loadTrips(),loadClients()]);}else{$('#authGate')?.classList.add('hidden');$('#logoutBtn')?.classList.add('hidden');applyTripDefaults();}}
+async function initializeSignedInWorkspace(){const ok=await verifyCloudSession();if(!ok)return;updateAccountButton();await loadCloudBrand();loadBrandForm();applyTripDefaults();await Promise.all([loadTrips(),loadClients()]);}
+async function initApp(){await status();const ok=await verifyCloudSession();if(!ok)return;updateAccountButton();if(currentUser){await loadCloudBrand();loadBrandForm();applyTripDefaults();await Promise.all([loadTrips(),loadClients()]);}else{$('#authGate')?.classList.add('hidden');$('#logoutBtn')?.classList.add('hidden');applyTripDefaults();}}
 initApp().finally(()=>restoreActiveProposal());
 
 
