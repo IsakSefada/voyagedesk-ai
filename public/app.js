@@ -313,7 +313,18 @@ function bindExpediaConversionTracking(){
   widget.dataset.trackingBound='1';
   // Expedia's Creator widget renders partner-controlled UI. Track engagement
   // at the TripFiver widget boundary without changing affiliate attribution.
-  widget.addEventListener('pointerdown',()=>trackConversion('expedia_widget_click',{source:'expedia-book-your-trip'}),{capture:true});
+  // Expedia renders an isolated iframe: clicks inside it do not bubble to this page.
+  // A focus transition from the TripFiver page into the widget iframe is an
+  // observable engagement signal. Count once per proposal view, not every focus.
+  let counted=false;
+  const record=()=>{if(counted)return;counted=true;trackConversion('expedia_widget_click',{source:'expedia-widget-focus'});};
+  widget.addEventListener('pointerdown',record,{capture:true});
+  window.addEventListener('blur',()=>{
+    setTimeout(()=>{
+      const active=document.activeElement;
+      if(active?.tagName==='IFRAME'&&widget.contains(active))record();
+    },150);
+  });
 }
 async function loadConversionDashboard(){
   try{
