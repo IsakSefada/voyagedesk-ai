@@ -308,7 +308,7 @@ async function openVerifiedViatorProduct(el,event){
     const d=await fetchJsonWithTimeout('/api/viator/product-link?productCode='+encodeURIComponent(productCode),{},12000);
     if(!d.productUrl)throw new Error('No product URL returned');
     const url=new URL(d.productUrl);
-    if(!/^(?:[a-z0-9-]+\.)?viator\.com(?:\.au)?$/i.test(url.hostname)||!url.pathname.toLowerCase().includes(productCode.toLowerCase()))
+    if(!/^(?:[a-z0-9-]+\.)*viator\.com(?:\.au)?$/i.test(url.hostname)||!url.pathname.toLowerCase().includes(productCode.toLowerCase()))
       throw new Error('Viator did not return a specific activity page');
     trackViatorClick(el);
     if(bookingTab&&!bookingTab.closed)bookingTab.location.replace(url.href);
