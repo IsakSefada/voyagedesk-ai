@@ -1,5 +1,6 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 let currentTrip=null,currentItinerary=null,cloudEnabled=false,currentUser=null,clientsCache=[];
+let saveAfterSignIn=false;
 let viatorRecommendationHistory=[];
 let viatorHistoryTripKey='';
 const VIATOR_HISTORY_KEY='tripfiver-viator-history-v1';
@@ -452,6 +453,13 @@ $('#saveTrip').onclick=async()=>{
   if(btn.disabled)return;
   syncProposalEdits();
   if(!currentTrip||!currentItinerary){alert('Generate a trip before saving.');return;}
+  if(cloudEnabled&&!currentUser){
+    saveAfterSignIn=true;
+    $('#authGate').classList.remove('hidden');
+    setAuthMode('signup');
+    authMessage('Create a free account or sign in to save this itinerary automatically.');
+    return;
+  }
   const payload={...currentTrip,itinerary:currentItinerary,title:currentItinerary.title,photos:Object.fromEntries(photoState)};
   const existingId=currentTrip.id;
   const oldLabel=btn.textContent;
@@ -577,7 +585,17 @@ function bindTripActions(){
 $('#tripSearch')?.addEventListener('input',renderTripManager);$('#tripStatusFilter')?.addEventListener('change',renderTripManager);
 async function loadTrips(){const r=await fetch('/api/trips');savedTripsCache=await r.json();$('#tripCount').textContent=savedTripsCache.length;$('#draftCount').textContent=savedTripsCache.filter(t=>(t.status||'Draft')==='Draft').length;renderTripManager();$('#recentTrips').innerHTML=savedTripsCache.length?savedTripsCache.slice(0,4).map(t=>`<div class="trip-row clickable" data-recent-open="${escapeHtml(t.id)}"><div><strong>${escapeHtml(t.title||t.clientName||'Untitled trip')}</strong><small>${escapeHtml(t.clientName||'')}</small></div><div>${escapeHtml(t.destinations||'')}</div><div>${escapeHtml(tripDateLabel(t))}</div><span class="status-pill">${escapeHtml(t.status||'Draft')}</span></div>`).join(''):'No trips yet.';$$('[data-recent-open]').forEach(x=>x.onclick=()=>openSavedTrip(x.dataset.recentOpen));}
 async function status(){try{const r=await fetch('/api/status'),s=await r.json();cloudEnabled=!!s.supabase;$('#providerStatus').textContent=`OpenAI ${s.openai?'connected':'not connected'} · Amadeus ${s.amadeus?'connected':'not connected'} · Cloud ${s.supabase?'connected':'local mode'}`;$('#liveStatus').textContent=s.amadeus?'Ready':'Setup';$('#storageBadge').textContent=s.supabase?'CLOUD':'LOCAL';$('#storageBadge').classList.toggle('cloud',!!s.supabase);$('#cloudModeLabel').textContent=s.supabase?'Private cloud account':'Local prototype mode';return s;}catch{return {supabase:false};}}
-async function initializeSignedInWorkspace(){const ok=await verifyCloudSession();if(!ok)return;updateAccountButton();await loadCloudBrand();loadBrandForm();applyTripDefaults();await Promise.all([loadTrips(),loadClients()]);}
+async function initializeSignedInWorkspace(){
+  const ok=await verifyCloudSession();if(!ok)return;
+  updateAccountButton();
+  await loadCloudBrand();loadBrandForm();applyTripDefaults();
+  await Promise.all([loadTrips(),loadClients()]);
+  if(saveAfterSignIn&&currentUser&&currentTrip&&currentItinerary){
+    saveAfterSignIn=false;
+    $('#authGate').classList.add('hidden');
+    $('#saveTrip').click();
+  }
+}
 async function initApp(){await status();const ok=await verifyCloudSession();if(!ok)return;updateAccountButton();if(currentUser){await loadCloudBrand();loadBrandForm();applyTripDefaults();await Promise.all([loadTrips(),loadClients()]);}else{$('#authGate')?.classList.add('hidden');$('#logoutBtn')?.classList.add('hidden');applyTripDefaults();}}
 initApp().finally(()=>restoreActiveProposal());
 
