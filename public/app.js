@@ -364,7 +364,9 @@ async function fetchJsonWithTimeout(url,options={},timeoutMs=12000){
     return d;
   }finally{clearTimeout(timer);}
 }
+let viatorLoadSequence=0;
 async function loadViatorExperiences(){
+  const loadId=++viatorLoadSequence;
   const host=$('#viatorExperiences');if(!host||!currentTrip)return;
   const tripKey=[currentTrip.destinations||'',currentTrip.startDate||'',currentTrip.endDate||'',currentTrip.interests||''].join('|').toLowerCase();
   if(viatorHistoryTripKey!==tripKey){viatorHistoryTripKey=tripKey;viatorRecommendationHistory=loadViatorHistory(tripKey);window.tripFiverViatorData=null;}
@@ -375,19 +377,22 @@ async function loadViatorExperiences(){
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({...currentTrip,itinerary:currentItinerary,excludeViatorProductCodes:viatorRecommendationHistory,limit:3})
-    },10000);
+    },18000);
     if(!(d.recommendations||[]).length)throw new Error('No personalized Viator recommendations returned');
+    if(loadId!==viatorLoadSequence)return;
     renderViatorExperiences(d);
     return;
   }catch(err){
     console.warn('[TripFiver Viator] personalized recommendations unavailable; using destination fallback',err);
   }
   try{
-    const d=await fetchJsonWithTimeout('/api/viator/activities?destination='+encodeURIComponent(destination)+'&limit=3&currency=USD',{},10000);
+    const d=await fetchJsonWithTimeout('/api/viator/activities?destination='+encodeURIComponent(destination)+'&limit=3&currency=USD',{},18000);
     if(!(d.products||[]).length)throw new Error('No Viator fallback products returned');
+    if(loadId!==viatorLoadSequence)return;
     renderViatorExperiences({provider:'Viator',recommendations:d.products||[],dayMatches:[]});
   }catch(err){
     console.warn('[TripFiver Viator] destination fallback unavailable',err);
+    if(loadId!==viatorLoadSequence)return;
     host.classList.remove('hidden');
     host.innerHTML='<div class="experience-loading">Experiences could not load right now. <button type="button" class="secondary" id="retryViator">Try again</button></div>';
     $('#retryViator')?.addEventListener('click',loadViatorExperiences,{once:true});
