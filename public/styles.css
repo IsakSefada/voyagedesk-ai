@@ -681,3 +681,11 @@
   }
   #tripForm input[type="date"]::-webkit-date-and-time-value{min-width:0!important}
 }
+
+/* Stage 8: keep legal disclosures at the bottom of content, not above the mobile welcome screen. */
+.tripfiver-legal-footer{margin:42px 0 0;padding:24px 20px 12px;border-top:1px solid var(--line);color:var(--muted);font-size:13px;line-height:1.6}
+.tripfiver-legal-footer .legal-draft-links{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-bottom:12px}
+.tripfiver-legal-footer .legal-draft-links a{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+.tripfiver-legal-footer .launch-trust-note{max-width:850px}
+.tripfiver-legal-footer .launch-trust-note p{margin:7px 0 0}
+@media(max-width:700px){.tripfiver-legal-footer{margin-top:28px;padding:20px 4px 10px;font-size:12px}.tripfiver-legal-footer .legal-draft-links{gap:7px}}
