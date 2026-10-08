@@ -620,7 +620,9 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
     const isRegeneration=!!body.previousItinerary;
     emit({type:'progress',stage:'itinerary',message:'Building your itinerary…'});
     const placesStarted=Date.now();
-    const restaurantCandidates=isRegeneration?await restaurantCandidatesForTrip(body):[];
+    // Start Google Places concurrently with AI generation instead of skipping it.
+    const restaurantCandidatesPromise=restaurantCandidatesForTrip(body);
+    const restaurantCandidates=isRegeneration?await restaurantCandidatesPromise:[];
     const placesMs=Date.now()-placesStarted;
     const aiStarted=Date.now();
     const itinerary=await requestItinerary(buildPrompt(body,restaurantCandidates),body.generationMode||'fast');
@@ -631,6 +633,21 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
       const diversityStarted=Date.now();
       finalItinerary=await enforceRegenerationDiversity(body,restaurantCandidates,itinerary);
       diversityMs=Date.now()-diversityStarted;
+    }
+    if(!isRegeneration){
+      const candidates=await restaurantCandidatesPromise;
+      if(candidates.length&&Array.isArray(finalItinerary.days)){
+        // Preserve the AI's daily schedule; attach real Google Places listings
+        // without inventing ratings or treating unverified AI picks as verified.
+        const used=new Set();
+        for(const day of finalItinerary.days){
+          const count=Math.min(2,candidates.length-used.size);
+          if(count<=0)break;
+          const picks=candidates.filter(x=>!used.has(x.id)).slice(0,count);
+          picks.forEach(x=>used.add(x.id));
+          day.restaurants=picks.map((p,i)=>({...p,meal:i?'Dinner':'Lunch',reason:'Google Places restaurant suggestion; check location and availability'}));
+        }
+      }
     }
     emit({type:'done',mode:'ai',itinerary:finalItinerary,timing:{totalMs:Date.now()-started,placesMs,aiMs,diversityMs,isRegeneration}});
   }catch(err){const itinerary=demoItinerary(body);itinerary.demoReason=err.message;emit({type:'done',mode:'demo',itinerary,timing:{totalMs:Date.now()-started}});}return res.end();}
