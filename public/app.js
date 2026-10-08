@@ -157,15 +157,47 @@ const LOCATION_CATALOG=[
  {city:'Seoul',region:'Seoul',country:'South Korea',cityCode:'SEL',airports:[['ICN','Incheon International Airport'],['GMP','Gimpo International Airport']]},
  {city:'Sydney',region:'New South Wales',country:'Australia',cityCode:'SYD',airports:[['SYD','Sydney Airport']]}
 ];
-const locationLabel=l=>`${l.city}, ${l.region}, ${l.country}`;
+const locationLabel=l=>l.label||[l.city,l.region,l.country].filter(Boolean).join(', ');
 const norm=v=>String(v||'').toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 function cityMatches(q){q=norm(q);if(!q)return[];return LOCATION_CATALOG.filter(l=>norm(`${l.city} ${l.region} ${l.country} ${l.cityCode}`).includes(q)).slice(0,8);}
 function airportMatches(q){q=norm(q);if(!q)return[];const out=[];for(const l of LOCATION_CATALOG)for(const [code,name] of l.airports){if(norm(`${code} ${name} ${l.city} ${l.region} ${l.country} ${l.cityCode}`).includes(q))out.push({location:l,code,name,type:'airport'});}return out.slice(0,10);}
 function transportMatches(q){q=norm(q);if(!q)return[];const out=[];for(const l of LOCATION_CATALOG){if(norm(`${l.city} ${l.region} ${l.country} ${l.cityCode}`).includes(q))out.push({location:l,code:l.cityCode,name:`All ${l.city} airports / city code`,type:'city'});for(const [code,name] of l.airports)if(norm(`${code} ${name} ${l.city} ${l.region} ${l.country}`).includes(q))out.push({location:l,code,name,type:'airport'});}const seen=new Set();return out.filter(x=>{const k=`${locationLabel(x.location)}|${x.code}`;if(seen.has(k))return false;seen.add(k);return true;}).slice(0,10);}
 function closeSuggestions(except=null){$$('.suggestions').forEach(x=>{if(x!==except)x.classList.remove('open');});}
 function showSuggestions(input,items,kind){const box=$(`.suggestions[data-for="${input.name}"]`);if(!box)return;box.innerHTML=items.map((x,i)=>kind==='city'?`<div class="suggestion" data-index="${i}"><span class="suggestion-main"><strong>${escapeHtml(x.city)}</strong><small>${escapeHtml(x.region)}, ${escapeHtml(x.country)}</small></span><span class="suggestion-code">${escapeHtml(x.cityCode)}</span></div>`:`<div class="suggestion" data-index="${i}"><span class="suggestion-main"><strong>${escapeHtml(x.code)} · ${escapeHtml(x.name)}</strong><small>${escapeHtml(locationLabel(x.location))}</small></span><span class="suggestion-code">${escapeHtml(x.code)}</span></div>`).join('');box.classList.toggle('open',items.length>0);[...box.children].forEach((row,i)=>row.onmousedown=e=>{e.preventDefault();selectSuggestion(input,items[i],kind);});}
-function selectSuggestion(input,item,kind){const f=$('#tripForm');if(kind==='city'){input.value=locationLabel(item);if(input.name==='departureCity'){f.originCode.value=item.airports[0]?.[0]||item.cityCode;}if(input.name==='destinations'){f.destinationCode.value=item.cityCode;}}else{input.value=item.code;if(input.name==='originCode'&&!f.departureCity.value.trim())f.departureCity.value=locationLabel(item.location);if(input.name==='destinationCode'){if(!f.destinations.value.trim())f.destinations.value=locationLabel(item.location);}}closeSuggestions();input.dispatchEvent(new Event('change',{bubbles:true}));}
-function setupSmartField(name,kind){const input=$(`#tripForm [name="${name}"]`);if(!input)return;const update=()=>{const q=input.value.trim();let items=[];if(kind==='city')items=cityMatches(q);else if(kind==='transport')items=transportMatches(q);else if(kind==='citycode')items=cityCodeMatches(q);else items=airportMatches(q);showSuggestions(input,items,kind);};input.addEventListener('input',update);input.addEventListener('focus',update);input.addEventListener('keydown',e=>{if(e.key==='Escape')closeSuggestions();});}
+function selectSuggestion(input,item,kind){const f=$('#tripForm');if(kind==='city'){input.value=locationLabel(item);if(input.name==='departureCity'){f.originCode.value=item.airports[0]?.[0]||item.cityCode||'';}if(input.name==='destinations'){f.destinationCode.value=item.cityCode||'';}}else{input.value=item.code;if(input.name==='originCode'&&!f.departureCity.value.trim())f.departureCity.value=locationLabel(item.location);if(input.name==='destinationCode'){if(!f.destinations.value.trim())f.destinations.value=locationLabel(item.location);}}closeSuggestions();input.dispatchEvent(new Event('change',{bubbles:true}));}
+const citySearchCache=new Map();
+async function worldwideCityMatches(query){
+ const q=String(query||'').trim();
+ if(q.length<2)return [];
+ const key=norm(q);
+ if(citySearchCache.has(key))return citySearchCache.get(key);
+ const response=await fetch('/api/places/cities?q='+encodeURIComponent(q));
+ if(!response.ok)throw new Error('Autocomplete unavailable');
+ const data=await response.json();
+ const results=(data.results||[]).map(p=>({city:p.main||p.label,region:p.secondary||'',country:'',cityCode:'',airports:[],label:p.label}));
+ citySearchCache.set(key,results);
+ if(citySearchCache.size>100)citySearchCache.delete(citySearchCache.keys().next().value);
+ return results;
+}
+function setupSmartField(name,kind){
+ const input=$(`#tripForm [name="${name}"]`);if(!input)return;
+ let sequence=0;
+ const update=async()=>{
+   const q=input.value.trim(),ticket=++sequence;
+   const local=kind==='city'?cityMatches(q):kind==='transport'?transportMatches(q):kind==='citycode'?cityCodeMatches(q):airportMatches(q);
+   showSuggestions(input,local,kind);
+   if(kind!=='city'||q.length<2)return;
+   try{
+     const remote=await worldwideCityMatches(q);
+     if(ticket!==sequence||input.value.trim()!==q)return;
+     const seen=new Set(remote.map(x=>norm(x.city)));
+     showSuggestions(input,[...remote,...local.filter(x=>!seen.has(norm(x.city)))].slice(0,8),kind);
+   }catch(e){/* Preserve local suggestions when provider is unavailable. */}
+ };
+ input.addEventListener('input',update);input.addEventListener('focus',update);
+ input.addEventListener('keydown',e=>{if(e.key==='Escape')closeSuggestions();});
+}
+
 setupSmartField('departureCity','city');setupSmartField('destinations','city');setupSmartField('originCode','transport');setupSmartField('destinationCode','transport');
 document.addEventListener('mousedown',e=>{if(!e.target.closest('.smart-field'))closeSuggestions();});
 
@@ -636,16 +668,29 @@ initApp().finally(async()=>{
 
 // v0.4 consumer home shortcuts
 function setupQuickCityField(id){
-  const input=$('#'+id),box=$(`.suggestions[data-quick-for="${id}"]`);if(!input||!box)return;
-  const close=()=>box.classList.remove('open');
-  const update=()=>{
-    const items=cityMatches(input.value);
-    box.innerHTML=items.map((x,i)=>`<div class="suggestion" data-index="${i}"><span class="suggestion-main"><strong>${escapeHtml(x.city)}</strong><small>${escapeHtml(x.region)}, ${escapeHtml(x.country)}</small></span><span class="suggestion-code">${escapeHtml(x.cityCode)}</span></div>`).join('');
-    box.classList.toggle('open',items.length>0);
-    [...box.children].forEach((row,i)=>row.onmousedown=e=>{e.preventDefault();input.value=locationLabel(items[i]);close();});
-  };
-  input.addEventListener('input',update);input.addEventListener('focus',update);input.addEventListener('blur',()=>setTimeout(close,120));
+ const input=$('#'+id),box=$(`.suggestions[data-quick-for="${id}"]`);if(!input||!box)return;
+ let sequence=0;
+ const close=()=>box.classList.remove('open');
+ const render=items=>{
+   box.innerHTML=items.map((x,i)=>`<div class="suggestion" data-index="${i}"><span class="suggestion-main"><strong>${escapeHtml(x.city)}</strong><small>${escapeHtml([x.region,x.country].filter(Boolean).join(', '))}</small></span><span class="suggestion-code">${escapeHtml(x.cityCode||'')}</span></div>`).join('');
+   box.classList.toggle('open',items.length>0);
+   [...box.children].forEach((row,i)=>row.onmousedown=e=>{e.preventDefault();input.value=locationLabel(items[i]);close();});
+ };
+ const update=async()=>{
+   const q=input.value.trim(),ticket=++sequence,local=cityMatches(q);
+   render(local);
+   if(q.length<2)return;
+   try{
+     const remote=await worldwideCityMatches(q);
+     if(ticket!==sequence||input.value.trim()!==q)return;
+     const seen=new Set(remote.map(x=>norm(x.city)));
+     render([...remote,...local.filter(x=>!seen.has(norm(x.city)))].slice(0,8));
+   }catch(e){/* Local catalog remains available. */}
+ };
+ input.addEventListener('input',update);input.addEventListener('focus',update);
+ input.addEventListener('blur',()=>setTimeout(close,120));
 }
+
 setupQuickCityField('quickOrigin');
 setupQuickCityField('quickDestination');
 function openPlannerWithQuickValues(destination='',origin='',departure='',returnDate=''){
