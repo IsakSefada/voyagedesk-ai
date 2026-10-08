@@ -13,7 +13,7 @@
 
     <form id="loginForm" class="auth-form">
       <label>Email<input id="loginEmail" type="email" required autocomplete="email" placeholder="you@example.com"></label>
-      <label>Password<input id="loginPassword" type="password" required autocomplete="current-password" placeholder="••••••••"></label>
+      <label>Password<input id="loginPassword" type="password" required autocomplete="current-password" placeholder="••••••••"><button type="button" class="password-visibility-toggle" aria-label="Show password" aria-pressed="false" data-password-toggle="loginPassword">Show password</button></label>
       <button class="forgot-link" id="showForgot" type="button">Forgot password?</button>
       <button class="primary" type="submit">Sign In</button>
     </form>
@@ -21,7 +21,7 @@
     <form id="signupForm" class="auth-form hidden">
       <label>Your name<input id="signupName" autocomplete="name" placeholder="Michael Green"></label>
       <label>Email<input id="signupEmail" type="email" required autocomplete="email" placeholder="you@example.com"></label>
-      <label>Password<input id="signupPassword" type="password" minlength="8" required autocomplete="new-password" placeholder="At least 8 characters"></label>
+      <label>Password<input id="signupPassword" type="password" minlength="8" required autocomplete="new-password" placeholder="At least 8 characters"><button type="button" class="password-visibility-toggle" aria-label="Show password" aria-pressed="false" data-password-toggle="signupPassword">Show password</button></label>
       <button class="primary" type="submit">Create Travel Account</button>
     </form>
 
@@ -32,8 +32,8 @@
     </form>
 
     <form id="resetForm" class="auth-form hidden">
-      <label>New password<input id="resetPassword" type="password" minlength="8" required autocomplete="new-password" placeholder="At least 8 characters"></label>
-      <label>Confirm new password<input id="resetPasswordConfirm" type="password" minlength="8" required autocomplete="new-password" placeholder="Type it again"></label>
+      <label>New password<input id="resetPassword" type="password" minlength="8" required autocomplete="new-password" placeholder="At least 8 characters"><button type="button" class="password-visibility-toggle" aria-label="Show password" aria-pressed="false" data-password-toggle="resetPassword">Show password</button></label>
+      <label>Confirm new password<input id="resetPasswordConfirm" type="password" minlength="8" required autocomplete="new-password" placeholder="Type it again"><button type="button" class="password-visibility-toggle" aria-label="Show password" aria-pressed="false" data-password-toggle="resetPasswordConfirm">Show password</button></label>
       <button class="primary" type="submit">Set New Password</button>
     </form>
 
