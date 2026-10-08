@@ -293,32 +293,26 @@ function trackViatorClick(el){
   const body=JSON.stringify(payload);try{navigator.sendBeacon('/api/viator/click',new Blob([body],{type:'application/json'}));}catch{fetch('/api/viator/click',{method:'POST',headers:{'Content-Type':'application/json'},body,keepalive:true}).catch(()=>{});}
   trackConversion('viator_click',{productCode:payload.productCode,day:payload.day,source:payload.source});
 }
-async function openVerifiedViatorProduct(el,event){
-  event.preventDefault();
-  const productCode=el.dataset.productCode||'';
-  if(!productCode)return;
-  const originalText=el.textContent;
-  // Open on the user's actual click; browsers may block windows opened after an async fetch.
-  const bookingTab=window.open('about:blank','_blank');
-  if(bookingTab){
-    try{bookingTab.opener=null;bookingTab.document.title='Opening Viator activity…';bookingTab.document.body.textContent='Verifying your selected Viator activity…';}catch{}
-  }
-  el.textContent='Opening…';
+function openVerifiedViatorProduct(el,event){
+  const productCode=String(el.dataset.productCode||'').trim();
+  const rawUrl=el.getAttribute('href')||'';
+  let url;
   try{
-    const d=await fetchJsonWithTimeout('/api/viator/product-link?productCode='+encodeURIComponent(productCode),{},12000);
-    if(!d.productUrl)throw new Error('No product URL returned');
-    const url=new URL(d.productUrl);
-    if(!/^(?:[a-z0-9-]+\.)*viator\.com(?:\.au)?$/i.test(url.hostname)||!url.pathname.toLowerCase().includes(productCode.toLowerCase()))
-      throw new Error('Viator did not return a specific activity page');
-    trackViatorClick(el);
-    if(bookingTab&&!bookingTab.closed)bookingTab.location.replace(url.href);
-    else window.open(url.href,'_blank','noopener');
+    url=new URL(rawUrl,window.location.origin);
+    if(!productCode||!/^(?:[a-z0-9-]+\\.)*viator\\.com(?:\\.au)?$/i.test(url.hostname)
+       ||!url.pathname.toLowerCase().includes(productCode.toLowerCase())
+       ||url.protocol!=='https:')throw new Error('Activity-specific link unavailable');
   }catch(err){
-    console.warn('[TripFiver Viator] verified product link unavailable',productCode,err);
-    if(bookingTab&&!bookingTab.closed)bookingTab.close();
-    el.textContent='Specific activity link unavailable — try again';
-    setTimeout(()=>{el.textContent=originalText;},3000);
+    event.preventDefault();
+    console.warn('[TripFiver Viator] invalid activity link',productCode,err);
+    const old=el.textContent;
+    el.textContent='Activity link unavailable';
+    setTimeout(()=>{el.textContent=old;},3000);
+    return;
   }
+  // Let Chrome follow the validated anchor natively, preserving the user's click.
+  // Do not open an intermediate tab or await another product lookup.
+  trackViatorClick(el);
 }
 
 function bindViatorClickTracking(){document.querySelectorAll('[data-viator-click]').forEach(el=>{if(el.dataset.trackingBound)return;el.dataset.trackingBound='1';el.addEventListener('click',e=>openVerifiedViatorProduct(el,e));});}
