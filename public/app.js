@@ -129,6 +129,7 @@ const LOCATION_CATALOG=[
  {city:'Paris',region:'Île-de-France',country:'France',cityCode:'PAR',airports:[['CDG','Charles de Gaulle Airport'],['ORY','Paris Orly Airport']]},
  {city:'Rome',region:'Lazio',country:'Italy',cityCode:'ROM',airports:[['FCO','Leonardo da Vinci–Fiumicino Airport'],['CIA','Ciampino Airport']]},
  {city:'Milan',region:'Lombardy',country:'Italy',cityCode:'MIL',airports:[['MXP','Milan Malpensa Airport'],['LIN','Milan Linate Airport'],['BGY','Milan Bergamo Airport']]},
+ {city:'Venice',region:'Veneto',country:'Italy',cityCode:'VCE',airports:[['VCE','Venice Marco Polo Airport'],['TSF','Treviso Airport']]},
  {city:'Madrid',region:'Community of Madrid',country:'Spain',cityCode:'MAD',airports:[['MAD','Adolfo Suárez Madrid–Barajas Airport']]},
  {city:'Barcelona',region:'Catalonia',country:'Spain',cityCode:'BCN',airports:[['BCN','Josep Tarradellas Barcelona–El Prat Airport']]},
  {city:'Lisbon',region:'Lisbon',country:'Portugal',cityCode:'LIS',airports:[['LIS','Humberto Delgado Airport']]},
