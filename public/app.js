@@ -1,3 +1,7 @@
+
+// Password visibility is opt-in and resets to hidden when the auth dialog closes.
+function resetPasswordVisibility(){document.querySelectorAll('[data-password-toggle]').forEach(btn=>{const field=document.getElementById(btn.dataset.passwordToggle);if(field)field.type='password';btn.textContent='Show password';btn.setAttribute('aria-label','Show password');btn.setAttribute('aria-pressed','false');});}
+document.querySelectorAll('[data-password-toggle]').forEach(btn=>btn.addEventListener('click',()=>{const field=document.getElementById(btn.dataset.passwordToggle);if(!field)return;const showing=field.type==='password';field.type=showing?'text':'password';btn.textContent=showing?'Hide password':'Show password';btn.setAttribute('aria-label',showing?'Hide password':'Show password');btn.setAttribute('aria-pressed',String(showing));}));
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 let currentTrip=null,currentItinerary=null,cloudEnabled=false,currentUser=null,clientsCache=[];
 let saveAfterSignIn=false;
