@@ -183,7 +183,7 @@ d.addPhotos=$('#addPhotos')?.checked===true;delete d.customCurrency;delete d.cus
 function refreshTripClientSelect(){
   const sel=$('#tripClientSelect');if(!sel)return;const selected=sel.value;
   sel.innerHTML='<option value="">New / unlinked client</option>'+clientsCache.map(c=>`<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}${c.email?` · ${escapeHtml(c.email)}`:''}</option>`).join('');
-  if([...sel.options].some(o=>o.value===selected))sel.value=selected;
+  if(Array.from(sel.options||[]).some(o=>o.value===selected))sel.value=selected;
 }
 $('#tripClientSelect')?.addEventListener('change',()=>{
   const c=clientsCache.find(x=>x.id===$('#tripClientSelect').value);if(!c)return;
