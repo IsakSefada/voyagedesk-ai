@@ -710,6 +710,12 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
     }catch(err){console.error('[conversion-summary]',err.message);return send(res,503,{error:'Conversion analytics are temporarily unavailable.'});}
   }
   if(url.pathname==='/api/conversion-event'&&req.method==='POST'){
+    const origin=req.headers.origin;
+    if(!origin)return send(res,403,{error:'Conversion event origin is required.'});
+    let sourceOrigin;
+    try{sourceOrigin=new URL(origin).origin;}catch{return send(res,403,{error:'Invalid event origin.'});}
+    const allowedOrigin=process.env.PUBLIC_APP_ORIGIN||'https://tripfiver.com';
+    if(sourceOrigin!==allowedOrigin)return send(res,403,{error:'Untrusted conversion event origin.'});
     const body=await parseBody(req);
     const allowed=new Set(['trip_created','viator_click','expedia_widget_click']);
     const event=String(body.event||'').slice(0,40);
