@@ -113,8 +113,10 @@ $('#resetForm')?.addEventListener('submit',async e=>{
   authMessage('Password changed successfully. Sign in with your new password.');
 });
 $('#accountBtn')?.addEventListener('click',()=>{if(currentUser){setView('trips');return;}$('#authGate')?.classList.remove('hidden');setAuthMode('login');});
-function updateAccountButton(){const b=$('#accountBtn');if(b)b.textContent=currentUser?'My Trips':'Sign In / Create Account';}
-$('#logoutBtn')?.addEventListener('click',async()=>{try{await fetch('/api/auth/logout',{method:'POST'});}catch{}setSession(null);currentUser=null;sessionStorage.removeItem('tripfiver-active-proposal-v1');currentTrip=null;currentItinerary=null;$('#proposal')?.classList.add('hidden');updateAccountButton();clearConversionDashboard();$('#signedInEmail').textContent='';$('#logoutBtn').classList.add('hidden');$('#authGate').classList.add('hidden');});
+function updateAccountButton(){const b=$('#accountBtn');if(b)b.textContent=currentUser?'My Trips':'Sign In / Create Account';$('#mobileLogoutBtn')?.classList.toggle('hidden',!currentUser);}
+async function signOutTripFiver(){try{await fetch('/api/auth/logout',{method:'POST'});}catch{}setSession(null);currentUser=null;sessionStorage.removeItem('tripfiver-active-proposal-v1');currentTrip=null;currentItinerary=null;$('#proposal')?.classList.add('hidden');updateAccountButton();clearConversionDashboard();$('#signedInEmail').textContent='';$('#logoutBtn').classList.add('hidden');$('#authGate').classList.add('hidden');}
+$('#logoutBtn')?.addEventListener('click',signOutTripFiver);
+$('#mobileLogoutBtn')?.addEventListener('click',signOutTripFiver);
 
 function setView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===name));document.querySelectorAll('.nav').forEach(v=>v.classList.toggle('active',v.dataset.view===name));const title=document.querySelector('#pageTitle');if(title)title.textContent={new:'Plan My Trip',trips:'My Trips',conversion:'Revenue & Conversion',clients:'Clients',settings:'Branding'}[name]||'Welcome to TripFiver';if(name==='conversion')loadConversionDashboard();window.scrollTo({top:0,behavior:'smooth'});}document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));document.querySelector('#newTripTop')?.addEventListener('click',()=>setView('new'));document.querySelector('#heroNew')?.addEventListener('click',()=>setView('new'));
 
