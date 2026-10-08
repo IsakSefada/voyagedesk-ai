@@ -108,7 +108,7 @@ $('#resetForm')?.addEventListener('submit',async e=>{
   authMessage('Password changed successfully. Sign in with your new password.');
 });
 $('#accountBtn')?.addEventListener('click',()=>{$('#authGate')?.classList.remove('hidden');setAuthMode('login');});
-$('#logoutBtn')?.addEventListener('click',async()=>{try{await fetch('/api/auth/logout',{method:'POST'});}catch{}setSession(null);currentUser=null;$('#signedInEmail').textContent='';$('#logoutBtn').classList.add('hidden');$('#authGate').classList.add('hidden');});
+$('#logoutBtn')?.addEventListener('click',async()=>{try{await fetch('/api/auth/logout',{method:'POST'});}catch{}setSession(null);currentUser=null;clearConversionDashboard();$('#signedInEmail').textContent='';$('#logoutBtn').classList.add('hidden');$('#authGate').classList.add('hidden');});
 
 function setView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===name));document.querySelectorAll('.nav').forEach(v=>v.classList.toggle('active',v.dataset.view===name));const title=document.querySelector('#pageTitle');if(title)title.textContent={new:'Plan My Trip',trips:'My Trips',conversion:'Revenue & Conversion',clients:'Clients',settings:'Branding'}[name]||'Welcome to TripFiver';if(name==='conversion')loadConversionDashboard();window.scrollTo({top:0,behavior:'smooth'});}document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));document.querySelector('#newTripTop')?.addEventListener('click',()=>setView('new'));document.querySelector('#heroNew')?.addEventListener('click',()=>setView('new'));
 
@@ -326,7 +326,15 @@ function bindExpediaConversionTracking(){
     },150);
   });
 }
+function clearConversionDashboard(message='Sign in as an administrator to view revenue metrics.'){
+  for(const id of ['metricTrips','metricViator','metricExpedia','metricEvents']){
+    const el=$('#'+id);if(el)el.textContent='—';
+  }
+  const table=$('#conversionDestinations');
+  if(table)table.innerHTML='<tr><td colspan="4">'+escapeHtml(message)+'</td></tr>';
+}
 async function loadConversionDashboard(){
+  clearConversionDashboard('Loading revenue metrics…');
   try{
     const r=await fetch('/api/conversion-summary');const d=await r.json();if(!r.ok)throw new Error(d.error||'Could not load conversion metrics');
     const counts=d.counts||{};
@@ -336,7 +344,7 @@ async function loadConversionDashboard(){
     if($('#metricEvents'))$('#metricEvents').textContent=Number(d.totalEvents||0).toLocaleString('en-US');
     const rows=(d.topDestinations||[]).map(x=>`<tr><td>${escapeHtml(x.destination)}</td><td>${Number(x.trip_created||0)}</td><td>${Number(x.viator_click||0)}</td><td>${Number(x.expedia_widget_click||0)}</td></tr>`).join('');
     if($('#conversionDestinations'))$('#conversionDestinations').innerHTML=rows||'<tr><td colspan="4">No conversion activity tracked yet.</td></tr>';
-  }catch(err){if($('#conversionDestinations'))$('#conversionDestinations').innerHTML='<tr><td colspan="4">Conversion metrics are temporarily unavailable.</td></tr>';}
+  }catch(err){clearConversionDashboard(err.message==='Sign in to access Revenue.'?'Sign in as an administrator to view revenue metrics.':err.message==='Revenue is restricted to administrators.'?'Revenue is restricted to administrators.':'Revenue metrics are unavailable. Sign in as an administrator and refresh.');}
 }
 document.addEventListener('click',e=>{
   const btn=e.target.closest('#refreshConversion');if(!btn)return;
