@@ -405,6 +405,7 @@ function restoreActiveProposal(){
     currentTrip=saved.trip;
     renderProposal(saved.itinerary);
     setView('new');
+    requestAnimationFrame(()=>$('#proposal')?.scrollIntoView({block:'start'}));
   }catch(err){console.warn('Could not restore active trip',err);}
 }
 function renderProposal(it){
@@ -541,7 +542,7 @@ async function loadTrips(){const r=await fetch('/api/trips');savedTripsCache=awa
 async function status(){try{const r=await fetch('/api/status'),s=await r.json();cloudEnabled=!!s.supabase;$('#providerStatus').textContent=`OpenAI ${s.openai?'connected':'not connected'} · Amadeus ${s.amadeus?'connected':'not connected'} · Cloud ${s.supabase?'connected':'local mode'}`;$('#liveStatus').textContent=s.amadeus?'Ready':'Setup';$('#storageBadge').textContent=s.supabase?'CLOUD':'LOCAL';$('#storageBadge').classList.toggle('cloud',!!s.supabase);$('#cloudModeLabel').textContent=s.supabase?'Private cloud account':'Local prototype mode';return s;}catch{return {supabase:false};}}
 async function initializeSignedInWorkspace(){const ok=await verifyCloudSession();if(!ok)return;await loadCloudBrand();loadBrandForm();applyTripDefaults();await Promise.all([loadTrips(),loadClients()]);}
 async function initApp(){await status();const ok=await verifyCloudSession();if(!ok)return;if(currentUser){await loadCloudBrand();loadBrandForm();applyTripDefaults();await Promise.all([loadTrips(),loadClients()]);}else{$('#authGate')?.classList.add('hidden');$('#logoutBtn')?.classList.add('hidden');applyTripDefaults();}}
-initApp();
+initApp().finally(()=>restoreActiveProposal());
 
 
 // v0.4 consumer home shortcuts
@@ -591,5 +592,4 @@ $('#quickCreate')?.addEventListener('click',e=>{
 $$('[data-destination]').forEach(card=>card.addEventListener('click',()=>openPlannerWithQuickValues(card.dataset.destination)));
 $$('.nav-coming').forEach(btn=>btn.addEventListener('click',()=>alert('This feature is planned for a future TripFiver update.')));
 
-// Restore an unsaved itinerary after a same-tab refresh without generating a new trip.
-restoreActiveProposal();
+// Active itinerary restoration runs after workspace initialization above.
