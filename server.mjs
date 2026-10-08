@@ -483,6 +483,18 @@ async function googlePlacesTextSearch(query, maxResultCount=10){
 const SUPABASE_URL=(process.env.SUPABASE_URL||'').trim().replace(/\/$/,'');
 const SUPABASE_KEY=(process.env.SUPABASE_PUBLISHABLE_KEY||process.env.SUPABASE_ANON_KEY||'').trim();
 const CLOUD_ENABLED=!!(SUPABASE_URL&&SUPABASE_KEY);
+const SUPABASE_SERVER_KEY=(process.env.SUPABASE_SERVICE_ROLE_KEY||process.env.SUPABASE_SECRET_KEY||'').trim();
+async function conversionDb(endpoint,{method='GET',body}={}){
+  if(!SUPABASE_URL||!SUPABASE_SERVER_KEY)throw new Error('Conversion database credentials are not configured');
+  const r=await fetch(SUPABASE_URL+'/rest/v1/conversion_events'+endpoint,{
+    method,headers:{apikey:SUPABASE_SERVER_KEY,Authorization:'Bearer '+SUPABASE_SERVER_KEY,
+      'Content-Type':'application/json',Prefer:'return=minimal'},
+    body:body===undefined?undefined:JSON.stringify(body)
+  });
+  if(!r.ok)throw new Error('Conversion database request failed ('+r.status+'): '+(await r.text()).slice(0,300));
+  return r.status===204?[]:await r.json();
+}
+
 function bearer(req){const h=req.headers.authorization||'';return h.startsWith('Bearer ')?h.slice(7):'';}
 async function supaFetch(endpoint,{method='GET',token='',body,headers={}}={}){
   if(!CLOUD_ENABLED)throw new Error('Supabase cloud is not configured.');
@@ -660,38 +672,31 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
     }catch(err){return send(res,503,{error:err.message,provider:'Viator'});}
   }
   if(url.pathname==='/api/conversion-summary'&&req.method==='GET'){
-    let events=[];try{events=JSON.parse(await readFile(conversionFile,'utf8'));if(!Array.isArray(events))events=[];}catch{}
-    const counts={trip_created:0,viator_click:0,expedia_widget_click:0};
-    const destinations={};
-    for(const e of events){
-      if(e?.event in counts)counts[e.event]++;
-      const d=String(e?.destination||'').trim();
-      if(d){destinations[d]=destinations[d]||{trip_created:0,viator_click:0,expedia_widget_click:0};if(e?.event in destinations[d])destinations[d][e.event]++;}
-    }
-    const topDestinations=Object.entries(destinations).map(([destination,v])=>({destination,...v,total:v.trip_created+v.viator_click+v.expedia_widget_click})).sort((a,b)=>b.total-a.total).slice(0,8);
-    return send(res,200,{counts,totalEvents:events.length,topDestinations,recent:events.slice(-12).reverse()});
+    try{
+      const events=await conversionDb('?select=created_at,event,destination,origin,product_code,day,source&order=created_at.desc&limit=5000');
+      const counts={trip_created:0,viator_click:0,expedia_widget_click:0},destinations={};
+      for(const e of events){
+        if(Object.hasOwn(counts,e.event))counts[e.event]++;
+        const d=String(e.destination||'').trim();
+        if(d){destinations[d]??={trip_created:0,viator_click:0,expedia_widget_click:0};
+          if(Object.hasOwn(destinations[d],e.event))destinations[d][e.event]++;}
+      }
+      const topDestinations=Object.entries(destinations).map(([destination,v])=>({destination,...v,total:v.trip_created+v.viator_click+v.expedia_widget_click})).sort((a,b)=>b.total-a.total).slice(0,8);
+      return send(res,200,{counts,totalEvents:events.length,topDestinations,recent:events.slice(0,12)});
+    }catch(err){console.error('[conversion-summary]',err.message);return send(res,503,{error:'Conversion analytics are temporarily unavailable.'});}
   }
   if(url.pathname==='/api/conversion-event'&&req.method==='POST'){
     const body=await parseBody(req);
     const allowed=new Set(['trip_created','viator_click','expedia_widget_click']);
     const event=String(body.event||'').slice(0,40);
     if(!allowed.has(event))return send(res,400,{error:'Unsupported conversion event.'});
-    const record={
-      at:new Date().toISOString(),
-      event,
-      destination:String(body.destination||'').slice(0,120),
-      origin:String(body.origin||'').slice(0,120),
-      productCode:String(body.productCode||'').slice(0,80),
-      day:Number(body.day)||null,
-      source:String(body.source||'tripfiver').slice(0,80)
-    };
-    console.log('[conversion-event]',JSON.stringify(record));
+    const record={event,destination:String(body.destination||'').slice(0,120),
+      origin:String(body.origin||'').slice(0,120),product_code:String(body.productCode||'').slice(0,80),
+      day:Number(body.day)||null,source:String(body.source||'tripfiver').slice(0,80)};
     try{
-      let events=[];try{events=JSON.parse(await readFile(conversionFile,'utf8'));if(!Array.isArray(events))events=[];}catch{}
-      events.push(record);if(events.length>5000)events=events.slice(-5000);
-      await writeFile(conversionFile,JSON.stringify(events,null,2));
-    }catch(err){console.warn('[conversion-event-storage]',err.message);}
-    return send(res,200,{ok:true});
+      await conversionDb('',{method:'POST',body:record});
+      return send(res,200,{ok:true});
+    }catch(err){console.error('[conversion-event-storage]',err.message);return send(res,503,{error:'Conversion event could not be saved.'});}
   }
   if(url.pathname==='/api/viator/click'&&req.method==='POST'){
     const body=await parseBody(req);
