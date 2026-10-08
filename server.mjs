@@ -664,6 +664,15 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
     const detail=await viatorProductDetails(productCode);
     if(!detail||String(detail.status||'ACTIVE').toUpperCase()==='INACTIVE')return send(res,404,{error:'Viator product is not available.'});
     if(!detail.productUrl)return send(res,404,{error:'Viator did not return a product booking URL.'});
+    let productPage;
+    try{productPage=new URL(detail.productUrl);}catch{return send(res,422,{error:'Viator returned an invalid activity URL.'});}
+    const host=productPage.hostname.toLowerCase();
+    const path=productPage.pathname;
+    const destinationOnly=/^\/[a-z-]+\/d\d+\/?$/i.test(path);
+    if(!host.endsWith('.viator.com')&&!host.endsWith('.viator.com.au')&&host!=='viator.com')
+      return send(res,422,{error:'Viator returned an unexpected activity link.'});
+    if(destinationOnly||!path.toLowerCase().includes(productCode.toLowerCase()))
+      return send(res,422,{error:'Viator sandbox did not provide a product-specific booking page. Live checkout is not available in sandbox.'});
     return send(res,200,{productCode:detail.productCode||productCode,productUrl:detail.productUrl,status:detail.status||'ACTIVE'});
   }
   if(url.pathname==='/api/viator/activities'&&req.method==='GET'){
