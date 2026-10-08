@@ -293,6 +293,20 @@ function compactHighlight(item){return String(item||'').split(/[.;—]/)[0].trim
 function viatorImage(product){const cover=(product.images||[]).find(x=>x.isCover)||(product.images||[])[0];const variants=cover?.variants||[];return variants.find(x=>x.width>=480)?.url||variants[variants.length-1]?.url||'';}
 function viatorDuration(duration={}){const mins=duration.fixedDurationInMinutes||duration.variableDurationFromMinutes;if(!mins)return'';const max=duration.variableDurationToMinutes;const fmt=m=>m>=60?(Number.isInteger(m/60)?`${m/60} hr`:`${(m/60).toFixed(1)} hr`):`${m} min`;return max&&max!==mins?`${fmt(mins)}–${fmt(max)}`:fmt(mins);}
 function viatorPrice(product){const p=product.pricing?.summary?.fromPrice,c=product.pricing?.currency;if(p==null)return'';try{return new Intl.NumberFormat(undefined,{style:'currency',currency:c||'USD',maximumFractionDigits:0}).format(p);}catch{return `${p} ${c||''}`.trim();}}
+function viatorProductLink(product,label,cssClass,extra=''){
+  const raw=String(product?.productUrl||'');
+  let url;
+  try{url=new URL(raw);}catch{return '<span class="'+cssClass+'" aria-disabled="true">Activity preview only</span>';}
+  // Sandbox URLs can redirect to Viator's homepage, especially on mobile.
+  if(url.hostname==='shop.live.rc.viator.com'||url.hostname.endsWith('.rc.viator.com')||url.hostname.includes('sandbox')){
+    return '<span class="'+cssClass+'" aria-disabled="true" title="Viator sandbox checkout unavailable">Sandbox preview only</span>';
+  }
+  const code=String(product?.productCode||'');
+  if(url.protocol!=='https:'||!code||!/(?:^|\\.)viator\\.com(?:\\.au)?$/i.test(url.hostname)||!url.pathname.toLowerCase().includes(code.toLowerCase())){
+    return '<span class="'+cssClass+'" aria-disabled="true">Activity preview only</span>';
+  }
+  return '<a class="'+cssClass+'" data-viator-click="1" data-product-code="'+escapeHtml(code)+'" '+extra+' href="'+escapeHtml(url.href)+'" target="_blank" rel="noopener sponsored">'+label+'</a>';
+}
 function renderViatorExperiences(data){
   window.tripFiverViatorData=data;
   const shown=(data?.recommendations||[]).map(x=>String(x.productCode||'')).filter(Boolean);
@@ -301,14 +315,14 @@ function renderViatorExperiences(data){
   const host=$('#viatorExperiences');if(!host)return;
   const items=(data?.recommendations||[]).slice(0,3);
   if(!items.length){host.classList.add('hidden');host.innerHTML='';return;}
-  host.innerHTML=`<div class="experience-head"><div><span class="experience-kicker">PERSONALIZED FOR YOUR TRIP</span><h3>Recommended Experiences for You</h3><p>TripFiver matched these experiences to your travel interests.</p></div><span class="experience-provider">Activities by Viator</span></div><div class="experience-grid">${items.map(p=>{const img=viatorImage(p),rating=p.reviews?.combinedAverageRating,reviews=p.reviews?.totalReviews,duration=viatorDuration(p.duration),price=viatorPrice(p),why=(p.match?.reasons||[]).join(' · ');return `<article class="experience-card">${img?`<img src="${escapeHtml(img)}" alt="${escapeHtml(p.title||'Travel experience')}" loading="lazy">`:''}<div class="experience-body"><h4>${escapeHtml(p.title||'Experience')}</h4><div class="experience-meta">${rating?`<span>★ ${escapeHtml(rating)}${reviews?` (${escapeHtml(reviews)})`:''}</span>`:''}${duration?`<span>⏱ ${escapeHtml(duration)}</span>`:''}</div>${why?`<p class="experience-why"><strong>Why TripFiver picked this:</strong> ${escapeHtml(why)}</p>`:''}<div class="experience-foot">${price?`<div><small>From</small><strong>${escapeHtml(price)}</strong></div>`:''}<a class="primary experience-btn" data-viator-click="1" data-product-code="${escapeHtml(p.productCode||'')}" href="${escapeHtml(p.productUrl||'#')}" target="_blank" rel="noopener sponsored">View Experience</a></div></div></article>`;}).join('')}</div>`;
+  host.innerHTML=`<div class="experience-head"><div><span class="experience-kicker">PERSONALIZED FOR YOUR TRIP</span><h3>Recommended Experiences for You</h3><p>TripFiver matched these experiences to your travel interests.</p></div><span class="experience-provider">Activities by Viator</span></div><div class="experience-grid">${items.map(p=>{const img=viatorImage(p),rating=p.reviews?.combinedAverageRating,reviews=p.reviews?.totalReviews,duration=viatorDuration(p.duration),price=viatorPrice(p),why=(p.match?.reasons||[]).join(' · ');return `<article class="experience-card">${img?`<img src="${escapeHtml(img)}" alt="${escapeHtml(p.title||'Travel experience')}" loading="lazy">`:''}<div class="experience-body"><h4>${escapeHtml(p.title||'Experience')}</h4><div class="experience-meta">${rating?`<span>★ ${escapeHtml(rating)}${reviews?` (${escapeHtml(reviews)})`:''}</span>`:''}${duration?`<span>⏱ ${escapeHtml(duration)}</span>`:''}</div>${why?`<p class="experience-why"><strong>Why TripFiver picked this:</strong> ${escapeHtml(why)}</p>`:''}<div class="experience-foot">${price?`<div><small>From</small><strong>${escapeHtml(price)}</strong></div>`:''}${viatorProductLink(p,"View Experience","primary experience-btn")}</div></div></article>`;}).join('')}</div>`;
   host.classList.remove('hidden');
   renderDayViatorMatches(data?.dayMatches||[]);
   bindViatorClickTracking();
 }
 function dayViatorCard(match){
   const p=match?.activity;if(!p)return'';const img=viatorImage(p),rating=p.reviews?.combinedAverageRating,duration=viatorDuration(p.duration),price=viatorPrice(p);
-  return `<div class="day-experience"><div class="day-experience-label">✦ TripFiver experience match</div><div class="day-experience-card">${img?`<img src="${escapeHtml(img)}" alt="${escapeHtml(p.title||'Experience')}" loading="lazy">`:''}<div><strong>${escapeHtml(p.title||'Experience')}</strong><div class="experience-meta">${rating?`<span>★ ${escapeHtml(rating)}</span>`:''}${duration?`<span>⏱ ${escapeHtml(duration)}</span>`:''}${price?`<span>From ${escapeHtml(price)}</span>`:''}</div><a class="day-experience-link" data-viator-click="1" data-product-code="${escapeHtml(p.productCode||'')}" data-day="${escapeHtml(match.day)}" href="${escapeHtml(p.productUrl||'#')}" target="_blank" rel="noopener sponsored">View matched experience →</a></div></div></div>`;
+  return `<div class="day-experience"><div class="day-experience-label">✦ TripFiver experience match</div><div class="day-experience-card">${img?`<img src="${escapeHtml(img)}" alt="${escapeHtml(p.title||'Experience')}" loading="lazy">`:''}<div><strong>${escapeHtml(p.title||'Experience')}</strong><div class="experience-meta">${rating?`<span>★ ${escapeHtml(rating)}</span>`:''}${duration?`<span>⏱ ${escapeHtml(duration)}</span>`:''}${price?`<span>From ${escapeHtml(price)}</span>`:''}</div>${viatorProductLink(p,"View matched experience →","day-experience-link",'data-day="'+escapeHtml(match.day)+'"')}</div></div></div>`;
 }
 function renderDayViatorMatches(matches=[]){
   document.querySelectorAll('.day-experience').forEach(x=>x.remove());
