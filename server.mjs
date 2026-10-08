@@ -664,6 +664,25 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
   if(url.pathname==='/api/live/flights'&&req.method==='POST'){const body=await parseBody(req);try{return send(res,200,{provider:'Amadeus',results:await liveFlights(body)});}catch(err){return send(res,503,{error:err.message,provider:'Amadeus'});}}
   if(url.pathname==='/api/live/hotels'&&req.method==='POST'){const body=await parseBody(req);try{return send(res,200,{provider:'Amadeus',results:await liveHotels(body)});}catch(err){return send(res,503,{error:err.message,provider:'Amadeus'});}}
   if(url.pathname==='/api/photos/search'&&req.method==='GET'){const q=url.searchParams.get('q')||'';if(!q.trim())return send(res,400,{error:'Photo search needs a location or attraction.'});try{return send(res,200,{provider:'Pexels',photos:await pexelsSearch(q,url.searchParams.get('per_page')||6)});}catch(err){return send(res,503,{error:err.message,provider:'Pexels'});}}
+  if(url.pathname==='/api/places/cities'&&req.method==='GET'){
+    const query=String(url.searchParams.get('q')||'').trim().slice(0,100);
+    if(query.length<2)return send(res,200,{results:[]});
+    if(!process.env.GOOGLE_PLACES_API_KEY)return send(res,503,{error:'Places service unavailable'});
+    try{
+      const response=await fetch(`${GOOGLE_PLACES_BASE}/places:autocomplete`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json','X-Goog-Api-Key':process.env.GOOGLE_PLACES_API_KEY},
+        body:JSON.stringify({input:query,includedPrimaryTypes:['(cities)'],languageCode:'en'})
+      });
+      const payload=await response.json().catch(()=>({}));
+      if(!response.ok)throw new Error(payload?.error?.message||'Location search unavailable');
+      const results=(payload.suggestions||[]).filter(x=>x.placePrediction).slice(0,8).map(x=>{
+        const p=x.placePrediction;
+        return {label:p.text?.text||'',placeId:p.placeId||'',main:p.structuredFormat?.mainText?.text||p.text?.text||'',secondary:p.structuredFormat?.secondaryText?.text||''};
+      }).filter(x=>x.label);
+      return send(res,200,{results});
+    }catch(err){console.warn('[Google Places] City autocomplete:',err.message);return send(res,503,{error:'Location suggestions unavailable'});}
+  }
   if(url.pathname==='/api/places/restaurants'&&req.method==='GET'){
     const destination=(url.searchParams.get('destination')||'').trim();
     const area=(url.searchParams.get('area')||'').trim();
