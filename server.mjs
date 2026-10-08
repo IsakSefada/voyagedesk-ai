@@ -272,7 +272,7 @@ const mime = {'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8
 async function readTrips(){ try{return JSON.parse(await readFile(dataFile,'utf8'));}catch{return [];} }
 async function saveTrips(trips){ await writeFile(dataFile,JSON.stringify(trips,null,2)); }
 function send(res,status,body,type='application/json; charset=utf-8'){res.writeHead(status,{'Content-Type':type,'Cache-Control':'no-store'});res.end(type.includes('json')?JSON.stringify(body):body);}
-async function parseBody(req){let body='';for await(const chunk of req)body+=chunk;return body?JSON.parse(body):{};}
+async function parseBody(req){let body='';for await(const chunk of req){body+=chunk;if(Buffer.byteLength(body,'utf8')>1048576){const err=new Error('Request body exceeds 1 MB limit.');err.statusCode=413;throw err;}}return body?JSON.parse(body):{};}
 
 function buildPrompt(trip,restaurantCandidates=[]){
   const mode=trip.generationMode==='detailed'?'detailed':'fast';
@@ -563,7 +563,17 @@ function bookingLinks(q){
   return {expediaHotel,expediaFlight,booking,googleFlights};
 }
 
+const requestBuckets=new Map();
+function apiRateAllowed(req,pathname){
+ const policy=pathname==='/api/generate-stream'?8:pathname==='/api/viator/recommendations'?40:0;
+ if(!policy)return true;
+ const key=pathname+':'+String(req.socket.remoteAddress||'unknown'),now=Date.now();
+ if(requestBuckets.size>10000)for(const [k,v] of requestBuckets)if(now-v.start>600000)requestBuckets.delete(k);
+ let b=requestBuckets.get(key);if(!b||now-b.start>=600000)b={start:now,count:0};
+ b.count++;requestBuckets.set(key,b);return b.count<=policy;
+}
 const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`http://${req.headers.host}`);
+  if(!apiRateAllowed(req,url.pathname))return send(res,429,{error:'Too many requests. Please wait a few minutes before trying again.'});
   if(url.pathname==='/api/status'&&req.method==='GET')return send(res,200,{openai:!!process.env.OPENAI_API_KEY,amadeus:!!(process.env.AMADEUS_API_KEY&&process.env.AMADEUS_API_SECRET),amadeusEnv:process.env.AMADEUS_ENV||'test',pexels:!!process.env.PEXELS_API_KEY,googlePlaces:!!process.env.GOOGLE_PLACES_API_KEY,viator:!!(process.env.VIATOR_SANDBOX_API_KEY||process.env.VIATOR_API_KEY),viatorEnv:process.env.VIATOR_ENV||'sandbox',supabase:CLOUD_ENABLED,storageMode:CLOUD_ENABLED?'cloud':'local'});
   if(url.pathname==='/api/auth/signup'&&req.method==='POST'){if(!CLOUD_ENABLED)return send(res,503,{error:'Cloud login is not configured yet.'});const body=await parseBody(req);try{const {data}=await supaFetch('/auth/v1/signup',{method:'POST',body:{email:body.email,password:body.password,data:{full_name:body.name||''}}});return send(res,200,data);}catch(err){return send(res,400,{error:err.message});}}
   if(url.pathname==='/api/auth/login'&&req.method==='POST'){if(!CLOUD_ENABLED)return send(res,503,{error:'Cloud login is not configured yet.'});const body=await parseBody(req);try{const {data}=await supaFetch('/auth/v1/token?grant_type=password',{method:'POST',body:{email:body.email,password:body.password}});return send(res,200,data);}catch(err){return send(res,400,{error:err.message});}}
