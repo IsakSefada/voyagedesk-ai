@@ -297,18 +297,29 @@ async function openVerifiedViatorProduct(el,event){
   const productCode=el.dataset.productCode||'';
   if(!productCode)return;
   const originalText=el.textContent;
+  // Open on the user's actual click; browsers may block windows opened after an async fetch.
+  const bookingTab=window.open('about:blank','_blank');
+  if(bookingTab){
+    try{bookingTab.opener=null;bookingTab.document.title='Opening Viator activity…';bookingTab.document.body.textContent='Verifying your selected Viator activity…';}catch{}
+  }
   el.textContent='Opening…';
   try{
-    const d=await fetchJsonWithTimeout('/api/viator/product-link?productCode='+encodeURIComponent(productCode),{},8000);
+    const d=await fetchJsonWithTimeout('/api/viator/product-link?productCode='+encodeURIComponent(productCode),{},12000);
     if(!d.productUrl)throw new Error('No product URL returned');
+    const url=new URL(d.productUrl);
+    if(!/^(?:[a-z0-9-]+\\.)?viator\\.com(?:\\.au)?$/i.test(url.hostname)||!url.pathname.toLowerCase().includes(productCode.toLowerCase()))
+      throw new Error('Viator did not return a specific activity page');
     trackViatorClick(el);
-    window.open(d.productUrl,'_blank','noopener');
+    if(bookingTab&&!bookingTab.closed)bookingTab.location.replace(url.href);
+    else window.open(url.href,'_blank','noopener');
   }catch(err){
     console.warn('[TripFiver Viator] verified product link unavailable',productCode,err);
-    el.textContent='Link unavailable — try again';
-    setTimeout(()=>{el.textContent=originalText;},2500);
+    if(bookingTab&&!bookingTab.closed)bookingTab.close();
+    el.textContent='Specific activity link unavailable — try again';
+    setTimeout(()=>{el.textContent=originalText;},3000);
   }
 }
+
 function bindViatorClickTracking(){document.querySelectorAll('[data-viator-click]').forEach(el=>{if(el.dataset.trackingBound)return;el.dataset.trackingBound='1';el.addEventListener('click',e=>openVerifiedViatorProduct(el,e));});}
 function bindExpediaConversionTracking(){
   const widget=$('#expediaAffiliateWidget');if(!widget||widget.dataset.trackingBound)return;
