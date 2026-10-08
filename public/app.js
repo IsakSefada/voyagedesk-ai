@@ -455,6 +455,7 @@ $('#saveTrip').onclick=async()=>{
   if(!currentTrip||!currentItinerary){alert('Generate a trip before saving.');return;}
   if(cloudEnabled&&!currentUser){
     saveAfterSignIn=true;
+    try{sessionStorage.setItem('tripfiver-pending-account-save-v1',JSON.stringify({trip:currentTrip,itinerary:currentItinerary}));}catch(err){console.warn('Could not preserve pending trip during signup:',err);}
     $('#authGate').classList.remove('hidden');
     setAuthMode('signup');
     authMessage('Create a free account or sign in to save this itinerary automatically.');
@@ -590,14 +591,41 @@ async function initializeSignedInWorkspace(){
   updateAccountButton();
   await loadCloudBrand();loadBrandForm();applyTripDefaults();
   await Promise.all([loadTrips(),loadClients()]);
-  if(saveAfterSignIn&&currentUser&&currentTrip&&currentItinerary){
-    saveAfterSignIn=false;
-    $('#authGate').classList.add('hidden');
-    $('#saveTrip').click();
+  if(currentUser){
+    let pending=null;
+    try{pending=JSON.parse(sessionStorage.getItem('tripfiver-pending-account-save-v1')||'null');}catch{}
+    if(pending?.trip&&pending?.itinerary?.days){
+      currentTrip={...pending.trip};
+      delete currentTrip.id;
+      currentItinerary=pending.itinerary;
+      sessionStorage.removeItem('tripfiver-pending-account-save-v1');
+      saveAfterSignIn=false;
+      renderProposal(currentItinerary);
+      setView('new');
+      $('#authGate').classList.add('hidden');
+      $('#saveTrip').click();
+    }else if(saveAfterSignIn&&currentTrip&&currentItinerary){
+      saveAfterSignIn=false;
+      $('#authGate').classList.add('hidden');
+      $('#saveTrip').click();
+    }
   }
 }
 async function initApp(){await status();const ok=await verifyCloudSession();if(!ok)return;updateAccountButton();if(currentUser){await loadCloudBrand();loadBrandForm();applyTripDefaults();await Promise.all([loadTrips(),loadClients()]);}else{$('#authGate')?.classList.add('hidden');$('#logoutBtn')?.classList.add('hidden');applyTripDefaults();}}
-initApp().finally(()=>restoreActiveProposal());
+initApp().finally(async()=>{
+  restoreActiveProposal();
+  if(currentUser){
+    let pending=null;
+    try{pending=JSON.parse(sessionStorage.getItem('tripfiver-pending-account-save-v1')||'null');}catch{}
+    if(pending?.trip&&Array.isArray(pending?.itinerary?.days)){
+      currentTrip={...pending.trip};delete currentTrip.id;
+      renderProposal(pending.itinerary);
+      setView('new');
+      sessionStorage.removeItem('tripfiver-pending-account-save-v1');
+      $('#saveTrip').click();
+    }
+  }
+});
 
 
 // v0.4 consumer home shortcuts
