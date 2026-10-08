@@ -664,3 +664,20 @@
 .quick-location-field{position:relative;min-width:0}
 .quick-location-field .quick-suggestions{top:calc(100% + 4px);z-index:120;min-width:100%;text-align:left}
 .quick-location-field .quick-suggestions.open{display:block}
+
+/* Stage 8: iOS Safari main trip form date fields must fit inside the same
+   mobile grid width as location and traveler inputs. */
+@media (max-width:700px){
+  #tripForm .grid.two{grid-template-columns:minmax(0,1fr)!important;min-width:0!important}
+  #tripForm .grid.two>label{min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+  #tripForm input[type="date"]{
+    display:block!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+    -webkit-appearance:none!important;
+    appearance:none!important;
+  }
+  #tripForm input[type="date"]::-webkit-date-and-time-value{min-width:0!important}
+}
