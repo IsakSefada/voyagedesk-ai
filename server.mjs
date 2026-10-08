@@ -343,8 +343,15 @@ async function restaurantCandidatesForTrip(trip){
   const notes=[trip.notes,trip.specialRequests,trip.dietaryNeeds].filter(Boolean).join(' ');
   const foodText=(interests+' '+notes).trim();
   const cuisine=/turkish/i.test(foodText)?'Turkish':/seafood/i.test(foodText)?'seafood':/italian/i.test(foodText)?'Italian':/vegetarian|vegan/i.test(foodText)?'vegetarian':'local';
-  try{const interestHint=foodText?` ${foodText.slice(0,120)}`:'';return await googlePlacesTextSearch(`${cuisine} restaurants ${interestHint} in ${destination}`,20);}
-  catch(err){console.warn('Google Places itinerary enrichment skipped:',err.message);return [];}
+  const interestHint=foodText?` ${foodText.slice(0,120)}`:'';
+  for(const query of [`${cuisine} restaurants ${interestHint} in ${destination}`,`restaurants in ${destination}`]){
+    try{
+      const results=await googlePlacesTextSearch(query,20);
+      if(results.length)return results;
+      console.warn('[Google Places] No restaurant results for destination:',destination);
+    }catch(err){console.warn('[Google Places] Restaurant search failed for destination:',destination,err.message);}
+  }
+  return [];
 }
 
 function itineraryTerms(itinerary){
