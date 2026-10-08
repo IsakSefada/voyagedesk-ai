@@ -299,7 +299,7 @@ function openVerifiedViatorProduct(el,event){
   let url;
   try{
     url=new URL(rawUrl,window.location.origin);
-    if(!productCode||!/^(?:[a-z0-9-]+\\.)*viator\\.com(?:\\.au)?$/i.test(url.hostname)
+    if(!productCode||!/^(?:[a-z0-9-]+\.)*viator\.com(?:\.au)?$/i.test(url.hostname)
        ||!url.pathname.toLowerCase().includes(productCode.toLowerCase())
        ||url.protocol!=='https:')throw new Error('Activity-specific link unavailable');
   }catch(err){
