@@ -218,6 +218,21 @@ function updateBudgetSymbol(){const currency=selectedCurrency()||'USD';if($('#bu
 function updateLanguageField(){$('#customLanguage')?.classList.toggle('hidden',$('#proposalLanguage')?.value!=='Other');}
 $('#budgetCurrency')?.addEventListener('change',updateBudgetSymbol);$('#customCurrency')?.addEventListener('input',updateBudgetSymbol);$('#proposalLanguage')?.addEventListener('change',updateLanguageField);updateBudgetSymbol();updateLanguageField();setupBudgetGrouping();
 function applyTripDefaults(){const b=getBrand();const f=$('#tripForm');if(!f)return;f.proposalLanguage.value=b.defaultLanguage||'English';f.budgetCurrency.value=b.defaultCurrency||'USD';updateBudgetSymbol();updateLanguageField();}
+// Stage 8A: US-to-Istanbul campaign deep links. Never auto-submit or book.
+function applyCampaignPrefill(){
+ const params=new URLSearchParams(location.search);
+ if((params.get('destination')||'').toLowerCase()!=='istanbul')return;
+ const form=document.getElementById('tripForm');if(!form)return;
+ const assign=(name,value)=>{const el=form.elements.namedItem(name);if(el&&value)el.value=value;};
+ assign('destinations','Istanbul, Türkiye');
+ if(params.get('origin')==='us')assign('departureCity','United States');
+ if(params.get('style')==='culture')assign('interests','Culture, history, museums, architecture, local food, and authentic Istanbul experiences');
+ if(params.get('budget')==='moderate')assign('hotelLevel','4-star');
+ const days=Math.min(30,Math.max(1,Number.parseInt(params.get('days')||'5',10)||5));
+ assign('notes','Please design a '+days+'-day Istanbul itinerary with a '+(params.get('budget')==='moderate'?'moderate budget':'flexible budget')+'. I will select my exact travel dates before booking.');
+ setView('new');
+ window.tripfiverAnalyticsEvent?.('campaign_landing',{destination:'istanbul',campaign:params.get('utm_campaign')||'istanbul_us'});
+}
 function formData(){const d=Object.fromEntries(new FormData($('#tripForm')).entries());d.originCode=(d.originCode||'').toUpperCase();d.destinationCode=(d.destinationCode||'').toUpperCase();d.hotelCityCode=(d.destinationCode||'').toUpperCase();d.travelers=`${d.adults||1} adult${d.adults==='1'?'':'s'}${Number(d.children)?`, ${d.children} children`:''}`;d.dates=[d.departureDate,d.returnDate].filter(Boolean).join(' – ');d.proposalLanguage=selectedLanguage()||'English';d.budgetCurrency=selectedCurrency()||'USD';d.budgetAmount=cleanBudgetAmount(d.budgetAmount);d.budget=d.budgetAmount?formatBudgetAmount(d.budgetAmount,d.budgetCurrency):'';
 d.addPhotos=$('#addPhotos')?.checked===true;delete d.customCurrency;delete d.customLanguage;return d;}
 
@@ -589,7 +604,7 @@ $('#clientSearch')?.addEventListener('input',renderClients);
 $('#saveClientBtn')?.addEventListener('click',async()=>{if(!cloudEnabled)return;const id=$('#clientId').value;const body={name:$('#clientName').value.trim(),email:$('#clientEmail').value.trim(),phone:$('#clientPhone').value.trim(),language:$('#clientLanguage').value.trim(),currency:$('#clientCurrency').value.trim().toUpperCase(),notes:$('#clientNotes').value.trim()};if(!body.name)return alert('Client name is required.');const r=await fetch(id?`/api/clients/${id}`:'/api/clients',{method:id?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)return alert(d.error||'Could not save client.');$('#clientEditor').classList.add('hidden');await loadClients();});
 async function deleteClient(id){const c=clientsCache.find(x=>x.id===id);if(!c||!confirm(`Delete ${c.name}? Existing trips will remain.`))return;const r=await fetch(`/api/clients/${id}`,{method:'DELETE'});if(!r.ok)return alert('Could not delete client.');await loadClients();}
 
-loadBrandForm();applyTripDefaults();
+loadBrandForm();applyTripDefaults();applyCampaignPrefill();
 
 // Keep agent edits synchronized with the itinerary object so Save Trip and PDF use the advisor's words.
 function syncProposalEdits(){if(!currentItinerary)return;currentItinerary.title=$('#proposalTitle').innerText.trim();currentItinerary.summary=$('#proposalSummary').innerText.trim();currentItinerary.estimatedBudgetNote=$('#budgetNote').innerText.trim();}
