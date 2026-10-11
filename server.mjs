@@ -45,8 +45,8 @@ function normalizeDestinationName(value){
   return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 }
 async function viatorFetch(endpoint,{method='GET',body}={}){
-  const key=(process.env.VIATOR_SANDBOX_API_KEY||process.env.VIATOR_API_KEY||'').trim();
-  if(!key)throw new Error('VIATOR_API_KEY is not configured.');
+  const key=(process.env.VIATOR_ENV === 'production' ? process.env.VIATOR_API_KEY : process.env.VIATOR_SANDBOX_API_KEY || process.env.VIATOR_API_KEY || '').trim();
+  if(!key)throw new Error(process.env.VIATOR_ENV === 'production' ? 'Viator production API key is not configured.' : 'Viator sandbox API key is not configured.');
   const r=await fetch(`${VIATOR_BASE}${endpoint}`,{
     method,
     headers:{
