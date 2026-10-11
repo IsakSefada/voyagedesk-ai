@@ -748,9 +748,16 @@ $$('.nav-coming').forEach(btn=>btn.addEventListener('click',()=>alert('This feat
 
 // Active itinerary restoration runs after workspace initialization above.
 
-$('#testViatorProduction')?.addEventListener('click',async()=>{
- const button=$('#testViatorProduction'),result=$('#viatorProductionResult');button.disabled=true;result.textContent='Testing Viator production connection…';
- try{const response=await fetch('/api/admin/viator-production-test',{method:'POST'});const data=await response.json();result.textContent=(data.ok?'PASS: ':'NOT VERIFIED: ')+(data.message||data.error||'No result')+(data.destinationCount?' ('+data.destinationCount+' destinations)':'');}
- catch{result.textContent='Unable to complete production test. Try again later.';}
+// Delegate the diagnostic action so it works even if the Revenue view is rebuilt.
+document.addEventListener('click',async event=>{
+ const button=event.target.closest('#testViatorProduction');if(!button||button.disabled)return;
+ event.preventDefault();const result=document.getElementById('viatorProductionResult');
+ if(!result)return;button.disabled=true;result.textContent='Connecting to Viator Production API…';
+ try{
+  const response=await fetch('/api/admin/viator-production-test',{method:'POST',headers:{'Accept':'application/json'}});
+  const data=await response.json();
+  result.textContent=(data.ok?'PASS: ':'TEST NOT PASSED: ')+(data.message||data.error||'No details returned')+(data.destinationCount?' ('+data.destinationCount+' destinations)':'');
+  if(!response.ok)result.textContent+=' (HTTP '+response.status+')';
+ }catch(error){result.textContent='Test could not complete: '+(error?.message||'Network error');}
  finally{button.disabled=false;}
 });
