@@ -237,6 +237,27 @@ function matchViatorToDays(products,days=[]){
     return {day:Number(day.day)||index+1,dayTitle:day.title||'',dayLocation:day.location||'',dayMatchScore:best.dayScore,dayMatchReasons:best.shared.slice(0,3),activity:best.product};
   }).filter(Boolean).slice(0,3);
 }
+function safeViatorProductUrl(raw,productCode){
+  try{
+    const url=new URL(String(raw||''));
+    const code=String(productCode||'').trim();
+    if(url.protocol!=='https:'||!/(^|\\.)viator\\.com(\\.au)?$/i.test(url.hostname)||!code)return null;
+    if(!url.pathname.toLowerCase().includes(code.toLowerCase()))return null;
+    if(process.env.VIATOR_ENV!=='production')return null;
+    return url.href;
+  }catch{return null;}
+}
+async function enrichViatorBookingLinks(products=[]){
+  // Search responses frequently omit productUrl; retrieve it from product details.
+  // Only attach verified product-specific URLs from the active production API.
+  return Promise.all(products.map(async product=>{
+    const existing=safeViatorProductUrl(product.productUrl,product.productCode);
+    if(existing)return {...product,productUrl:existing};
+    if(process.env.VIATOR_ENV!=='production')return {...product,productUrl:null};
+    const details=await viatorProductDetails(product.productCode);
+    return {...product,productUrl:safeViatorProductUrl(details?.productUrl,product.productCode)};
+  }));
+}
 async function personalizedViatorActivities(trip={},limit=5){
   const destination=String(trip.destinations||trip.destination||'').split(/[;,\n]/)[0].trim();
   if(!destination)throw new Error('Destination is required.');
@@ -256,13 +277,19 @@ async function personalizedViatorActivities(trip={},limit=5){
   let eligible=combined.filter(p=>!priorCodes.has(String(p.productCode)));
   if(eligible.length<Math.max(5,Number(limit)||5))eligible=combined;
   const ranked=rankViatorActivities(eligible,trip,10);
+  const recommendations=ranked.slice(0,Math.min(10,Math.max(1,Number(limit)||5)));
+  const dayMatches=matchViatorToDays(ranked,trip.itinerary?.days||trip.days||[]);
+  const selected=[...recommendations,...dayMatches.map(m=>m.activity).filter(Boolean)];
+  const unique=[...new Map(selected.filter(p=>p?.productCode).map(p=>[String(p.productCode),p])).values()];
+  const enriched=await enrichViatorBookingLinks(unique);
+  const byCode=new Map(enriched.map(p=>[String(p.productCode),p]));
   return {
     resolvedDestination:resolved.match,
     travelerProfile:travelerActivityProfile(trip).themes,
     candidateCount:combined.length,
     discoveryStart,
-    recommendations:ranked.slice(0,Math.min(10,Math.max(1,Number(limit)||5))),
-    dayMatches:matchViatorToDays(ranked,trip.itinerary?.days||trip.days||[])
+    recommendations:recommendations.map(p=>byCode.get(String(p.productCode))||p),
+    dayMatches:dayMatches.map(m=>({...m,activity:byCode.get(String(m.activity?.productCode))||m.activity}))
   };
 }
 
