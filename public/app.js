@@ -773,7 +773,12 @@ document.addEventListener('click',async event=>{
   const response=await fetch('/api/admin/viator-production-test',{method:'POST',headers:{'Accept':'application/json'}});
   const data=await response.json();
   result.textContent=(data.ok?'PASS: ':'TEST NOT PASSED: ')+(data.message||data.error||'No details returned')+(data.destinationCount?' ('+data.destinationCount+' destinations)':'');
-  if(!response.ok)result.textContent+=' (HTTP '+response.status+')';
+  if(data.istanbulProductCount!==undefined)result.textContent+=' | Istanbul activities: '+data.istanbulProductCount+' | Valid product links: '+data.validProductLinks+' | Links tagged with TripFiver partner ID: '+data.affiliateTaggedLinks;
+  result.querySelectorAll('a').forEach(a=>a.remove());
+  for(const item of (data.sample||[])){
+    const link=document.createElement('a');link.href=item.url;link.target='_blank';link.rel='noopener sponsored';link.textContent=' Open Viator: '+item.title+' ('+(item.affiliateTagged?'partner ID present':'partner ID not detected')+')';link.style.display='block';result.appendChild(link);
+  }
+  if(!response.ok)result.append(' (HTTP '+response.status+')');
  }catch(error){result.textContent='Test could not complete: '+(error?.message||'Network error');}
  finally{button.disabled=false;}
 });
