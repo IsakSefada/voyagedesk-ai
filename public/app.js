@@ -323,7 +323,7 @@ function viatorProductLink(product,label,cssClass,extra=''){
     return '<span class="'+cssClass+'" aria-disabled="true" title="Viator sandbox checkout unavailable">Sandbox preview only</span>';
   }
   const code=String(product?.productCode||'');
-  if(url.protocol!=='https:'||!code||!/(?:^|\\.)viator\\.com(?:\\.au)?$/i.test(url.hostname)||!url.pathname.toLowerCase().includes(code.toLowerCase())){
+  if(url.protocol!=='https:'||!code||!/(?:^|\.)viator\.com(?:\.au)?$/i.test(url.hostname)||!url.pathname.toLowerCase().includes(code.toLowerCase())){
     return '<span class="'+cssClass+'" aria-disabled="true">Activity preview only</span>';
   }
   return '<a class="'+cssClass+'" data-viator-click="1" data-product-code="'+escapeHtml(code)+'" '+extra+' href="'+escapeHtml(url.href)+'" target="_blank" rel="noopener sponsored">'+label+'</a>';
