@@ -241,7 +241,7 @@ function safeViatorProductUrl(raw,productCode){
   try{
     const url=new URL(String(raw||''));
     const code=String(productCode||'').trim();
-    if(url.protocol!=='https:'||!/(^|\\.)viator\\.com(\\.au)?$/i.test(url.hostname)||!code)return null;
+    if(url.protocol!=='https:'||!/(^|\.)viator\.com(\.au)?$/i.test(url.hostname)||!code)return null;
     if(!url.pathname.toLowerCase().includes(code.toLowerCase()))return null;
     if(process.env.VIATOR_ENV!=='production')return null;
     return url.href;
