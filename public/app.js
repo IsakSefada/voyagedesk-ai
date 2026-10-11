@@ -747,3 +747,10 @@ $$('[data-destination]').forEach(card=>card.addEventListener('click',()=>openPla
 $$('.nav-coming').forEach(btn=>btn.addEventListener('click',()=>alert('This feature is planned for a future TripFiver update.')));
 
 // Active itinerary restoration runs after workspace initialization above.
+
+$('#testViatorProduction')?.addEventListener('click',async()=>{
+ const button=$('#testViatorProduction'),result=$('#viatorProductionResult');button.disabled=true;result.textContent='Testing Viator production connection…';
+ try{const response=await fetch('/api/admin/viator-production-test',{method:'POST'});const data=await response.json();result.textContent=(data.ok?'PASS: ':'NOT VERIFIED: ')+(data.message||data.error||'No result')+(data.destinationCount?' ('+data.destinationCount+' destinations)':'');}
+ catch{result.textContent='Unable to complete production test. Try again later.';}
+ finally{button.disabled=false;}
+});
