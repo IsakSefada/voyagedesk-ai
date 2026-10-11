@@ -777,7 +777,7 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
       const verified=products.map(p=>{
         let url;try{url=new URL(String(p.productUrl||''));}catch{return null;}
         const code=String(p.productCode||'');
-        if(url.protocol!=='https:'||!/(^|\\.)viator\\.com(\\.au)?$/i.test(url.hostname)||!code||!url.pathname.toLowerCase().includes(code.toLowerCase()))return null;
+        if(url.protocol!=='https:'||!/(^|\.)viator\.com(\.au)?$/i.test(url.hostname)||!code||!url.pathname.toLowerCase().includes(code.toLowerCase()))return null;
         return {title:String(p.title||'').slice(0,120),productCode:code,url:url.href,affiliateTagged:url.searchParams.get('pid')==='P00322925'};
       }).filter(Boolean);
       return send(res,200,{ok:verified.length>0,httpStatus:200,destinationCount:destinations.length,istanbulProductCount:products.length,productUrlsProvided:urlPresent,validProductLinks:verified.length,affiliateTaggedLinks:verified.filter(p=>p.affiliateTagged).length,sample:verified.slice(0,3),message:verified.length?'Production Istanbul activities and product-specific links returned. Manually verify a sample product and affiliate tracking before activation.':urlPresent===0?'Production Istanbul activities returned, but the search response provided no productUrl fields. Product-detail URL lookup or approved affiliate-link construction is required. Do not activate.':'Production activities have URLs but none passed URL validation. Do not activate.'});
