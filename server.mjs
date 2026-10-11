@@ -745,6 +745,25 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
       return send(res,200,{provider:'Viator',...result});
     }catch(err){return send(res,503,{error:err.message,provider:'Viator'});}
   }
+  if(url.pathname==='/api/admin/viator-production-test'&&req.method==='POST'){
+    const admins=String(process.env.REVENUE_ADMIN_EMAILS||'').split(',').map(x=>x.trim().toLowerCase()).filter(Boolean);
+    if(!admins.length)return send(res,503,{ok:false,error:'Administrator access is not configured.'});
+    let identity;
+    try{identity=await cloudUser(req);}catch{return send(res,401,{ok:false,error:'Sign in as administrator.'});}
+    if(!admins.includes(String(identity.user.email||'').trim().toLowerCase()))return send(res,403,{ok:false,error:'Administrator access required.'});
+    const key=String(process.env.VIATOR_API_KEY||'').trim();
+    if(!key)return send(res,503,{ok:false,error:'Production API key is not configured.'});
+    try{
+      const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),12000);
+      let response;
+      try{response=await fetch('https://api.viator.com/partner/destinations',{headers:{'exp-api-key':key,'Accept':'application/json;version=2.0','Accept-Language':'en-US'},signal:controller.signal});}
+      finally{clearTimeout(timeout);}
+      if(!response.ok)return send(res,200,{ok:false,httpStatus:response.status,message:'Viator production API request was rejected. No environment changes were made.'});
+      const data=await response.json();
+      const destinations=Array.isArray(data?.destinations)?data.destinations:Array.isArray(data)?data:[];
+      return send(res,200,{ok:destinations.length>0,httpStatus:response.status,destinationCount:destinations.length,message:destinations.length?'Production API authenticated and returned destinations. Activity and affiliate links still require validation.':'Production API responded but returned no destinations.'});
+    }catch(err){return send(res,200,{ok:false,message:err?.name==='AbortError'?'Production API request timed out.':'Production API could not be reached.'});}
+  }
   if(url.pathname==='/api/conversion-summary'&&req.method==='GET'){
     const admins=String(process.env.REVENUE_ADMIN_EMAILS||'').split(',').map(x=>x.trim().toLowerCase()).filter(Boolean);
     if(!admins.length)return send(res,503,{error:'Revenue administrator access has not been configured.'});
