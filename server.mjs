@@ -761,7 +761,19 @@ const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`h
       if(!response.ok)return send(res,200,{ok:false,httpStatus:response.status,message:'Viator production API request was rejected. No environment changes were made.'});
       const data=await response.json();
       const destinations=Array.isArray(data?.destinations)?data.destinations:Array.isArray(data)?data:[];
-      return send(res,200,{ok:destinations.length>0,httpStatus:response.status,destinationCount:destinations.length,message:destinations.length?'Production API authenticated and returned destinations. Activity and affiliate links still require validation.':'Production API responded but returned no destinations.'});
+      // Read-only Istanbul product check; never changes the active Viator environment.
+      const istanbul=destinations.find(d=>String(d.name||'').toLowerCase()==='istanbul'&&Number(d.destinationId)>0);
+      if(!istanbul)return send(res,200,{ok:false,httpStatus:200,destinationCount:destinations.length,message:'Production destinations returned, but Istanbul destination could not be resolved.'});
+      const searchBody={filtering:{destination:String(istanbul.destinationId)},sorting:{sort:'TRAVELER_RATING',order:'DESCENDING'},pagination:{start:1,count:5},currency:'USD'};
+      const controller2=new AbortController();const timeout2=setTimeout(()=>controller2.abort(),15000);
+      let productsResponse;
+      try{productsResponse=await fetch('https://api.viator.com/partner/products/search',{method:'POST',headers:{'exp-api-key':key,'Accept':'application/json;version=2.0','Accept-Language':'en-US','Content-Type':'application/json'},body:JSON.stringify(searchBody),signal:controller2.signal});}
+      finally{clearTimeout(timeout2);}
+      if(!productsResponse.ok)return send(res,200,{ok:false,httpStatus:productsResponse.status,destinationCount:destinations.length,message:'Production destinations work, but Istanbul activity search failed. No environment changes were made.'});
+      const productsData=await productsResponse.json();
+      const products=Array.isArray(productsData?.products)?productsData.products:[];
+      const verified=products.map(p=>{let url;try{url=new URL(p.productUrl)}catch{return null;}const code=String(p.productCode||'');if(url.protocol!=='https:'||!/(^|\\.)viator\\.com(\\.au)?$/i.test(url.hostname)||!code||!url.pathname.toLowerCase().includes(code.toLowerCase()))return null;return {title:String(p.title||'').slice(0,120),productCode:code,url:url.href,affiliateTagged:url.searchParams.get('pid')==='P00322925'};}).filter(Boolean);
+      return send(res,200,{ok:verified.length>0,httpStatus:200,destinationCount:destinations.length,istanbulProductCount:products.length,validProductLinks:verified.length,affiliateTaggedLinks:verified.filter(p=>p.affiliateTagged).length,sample:verified.slice(0,3),message:verified.length?'Production Istanbul activities and product-specific links returned. Manually verify a sample product opens correctly and affiliate tracking before activation.':'Production Istanbul activities returned, but no safe product-specific URLs were found. Do not activate.'});
     }catch(err){return send(res,200,{ok:false,message:err?.name==='AbortError'?'Production API request timed out.':'Production API could not be reached.'});}
   }
   if(url.pathname==='/api/conversion-summary'&&req.method==='GET'){
