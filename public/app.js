@@ -335,6 +335,7 @@ function renderDayViatorMatches(matches=[]){
   matches.forEach(m=>{const cards=[...document.querySelectorAll('.consumer-day')];const card=cards.find(x=>Number(x.dataset.day)===Number(m.day));if(!card)return;const details=card.querySelector('.day-details');if(details)details.insertAdjacentHTML('beforeend',dayViatorCard(m));});
 }
 function trackConversion(event,extra={}){
+  if(['trip_created','viator_click','expedia_widget_click'].includes(event))window.tripfiverAnalyticsEvent?.(event,{source:'tripfiver'});
   const payload={event,destination:currentTrip?.destinations||'',origin:currentTrip?.origin||'',...extra};
   const body=JSON.stringify(payload);
   try{navigator.sendBeacon('/api/conversion-event',new Blob([body],{type:'application/json'}));}
