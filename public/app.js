@@ -218,20 +218,26 @@ function updateBudgetSymbol(){const currency=selectedCurrency()||'USD';if($('#bu
 function updateLanguageField(){$('#customLanguage')?.classList.toggle('hidden',$('#proposalLanguage')?.value!=='Other');}
 $('#budgetCurrency')?.addEventListener('change',updateBudgetSymbol);$('#customCurrency')?.addEventListener('input',updateBudgetSymbol);$('#proposalLanguage')?.addEventListener('change',updateLanguageField);updateBudgetSymbol();updateLanguageField();setupBudgetGrouping();
 function applyTripDefaults(){const b=getBrand();const f=$('#tripForm');if(!f)return;f.proposalLanguage.value=b.defaultLanguage||'English';f.budgetCurrency.value=b.defaultCurrency||'USD';updateBudgetSymbol();updateLanguageField();}
-// Stage 8A: US-to-Istanbul campaign deep links. Never auto-submit or book.
+// Campaign deep links: prefill supported destinations without auto-submitting or booking.
 function applyCampaignPrefill(){
  const params=new URLSearchParams(location.search);
- if((params.get('destination')||'').toLowerCase()!=='istanbul')return;
+ const destination=(params.get('destination')||'').trim().toLowerCase();
+ const campaigns={
+  istanbul:{label:'Istanbul, Türkiye',style:'culture',interests:'Culture, history, museums, architecture, local food, and authentic Istanbul experiences'},
+  miami:{label:'Miami, Florida, USA',style:'relaxation',interests:'Beaches, relaxation, South Beach, Wynwood street art, Little Havana food, waterfront activities, and local culture'}
+ };
+ const config=campaigns[destination];if(!config)return;
  const form=document.getElementById('tripForm');if(!form)return;
  const assign=(name,value)=>{const el=form.elements.namedItem(name);if(el&&value)el.value=value;};
- assign('destinations','Istanbul, Türkiye');
+ assign('destinations',config.label);
+ const quick=document.getElementById('quickDestination');if(quick)quick.value=config.label;
  if(params.get('origin')==='us')assign('departureCity','United States');
- if(params.get('style')==='culture')assign('interests','Culture, history, museums, architecture, local food, and authentic Istanbul experiences');
+ if(params.get('style')===config.style)assign('interests',config.interests);
  if(params.get('budget')==='moderate')assign('hotelLevel','4-star');
  const days=Math.min(30,Math.max(1,Number.parseInt(params.get('days')||'5',10)||5));
- assign('notes','Please design a '+days+'-day Istanbul itinerary with a '+(params.get('budget')==='moderate'?'moderate budget':'flexible budget')+'. I will select my exact travel dates before booking.');
+ assign('notes','Please design a '+days+'-day '+config.label+' itinerary with a '+(params.get('budget')==='moderate'?'moderate budget':'flexible budget')+'. I will select my exact travel dates before booking.');
  setView('new');
- window.tripfiverAnalyticsEvent?.('campaign_landing',{destination:'istanbul',campaign:params.get('utm_campaign')||'istanbul_us'});
+ window.tripfiverAnalyticsEvent?.('campaign_landing',{destination,campaign:params.get('utm_campaign')||(destination+'_campaign')});
 }
 function formData(){const d=Object.fromEntries(new FormData($('#tripForm')).entries());d.originCode=(d.originCode||'').toUpperCase();d.destinationCode=(d.destinationCode||'').toUpperCase();d.hotelCityCode=(d.destinationCode||'').toUpperCase();d.travelers=`${d.adults||1} adult${d.adults==='1'?'':'s'}${Number(d.children)?`, ${d.children} children`:''}`;d.dates=[d.departureDate,d.returnDate].filter(Boolean).join(' – ');d.proposalLanguage=selectedLanguage()||'English';d.budgetCurrency=selectedCurrency()||'USD';d.budgetAmount=cleanBudgetAmount(d.budgetAmount);d.budget=d.budgetAmount?formatBudgetAmount(d.budgetAmount,d.budgetCurrency):'';
 d.addPhotos=$('#addPhotos')?.checked===true;delete d.customCurrency;delete d.customLanguage;return d;}
